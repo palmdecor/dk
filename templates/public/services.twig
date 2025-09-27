@@ -1,0 +1,21 @@
+{% include 'partials/header.twig' %}
+<section class="page-header">
+    <div class="container">
+        <h1>Hizmetlerimiz</h1>
+    </div>
+</section>
+<section class="services">
+    <div class="container">
+        <div class="grid">
+            {% for service in services %}
+                <article class="card">
+                    <img src="{{ service.image }}" alt="{{ service.title }}">
+                    <h3>{{ service.title }}</h3>
+                    <p>{{ service.excerpt }}</p>
+                    <a href="/service.php?slug={{ service.slug }}" class="button-outline">İncele</a>
+                </article>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+{% include 'partials/footer.twig' %}

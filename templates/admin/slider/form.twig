@@ -1,0 +1,42 @@
+{% extends 'admin/layout.twig' %}
+
+{% block title %}Slider Formu{% endblock %}
+
+{% block content %}
+<div class="admin-card">
+    <h2>{% if item %}Slider Öğesini Düzenle{% else %}Yeni Slider Öğesi{% endif %}</h2>
+    <form method="post" enctype="multipart/form-data">
+        <input type="hidden" name="_token" value="{{ csrf.generateToken(token_id) }}">
+        <input type="hidden" name="_token_id" value="{{ token_id }}">
+
+        <label>Başlık
+            <input type="text" name="title" value="{{ item.title|default('') }}" required>
+        </label>
+        <label>Alt Başlık
+            <input type="text" name="subtitle" value="{{ item.subtitle|default('') }}">
+        </label>
+        <label>Buton Metni
+            <input type="text" name="button_text" value="{{ item.button_text|default('') }}">
+        </label>
+        <label>Buton URL
+            <input type="url" name="button_url" value="{{ item.button_url|default('') }}">
+        </label>
+        <label>Görsel
+            {% if item and item.image %}
+                <img src="{{ item.image }}" alt="" class="admin-thumb">
+            {% endif %}
+            <input type="file" name="image" accept="image/*">
+        </label>
+        <label>Sıralama
+            <input type="number" name="sort_order" value="{{ item.sort_order|default(0) }}" min="0">
+        </label>
+        <label>Durum
+            <select name="status">
+                <option value="draft" {% if item.status == 'draft' %}selected{% endif %}>Taslak</option>
+                <option value="published" {% if item.status == 'published' %}selected{% endif %}>Yayında</option>
+            </select>
+        </label>
+        <button type="submit" class="admin-button">Kaydet</button>
+    </form>
+</div>
+{% endblock %}

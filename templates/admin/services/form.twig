@@ -1,0 +1,39 @@
+{% extends 'admin/layout.twig' %}
+
+{% block title %}Hizmet Formu{% endblock %}
+
+{% block content %}
+<div class="admin-card">
+    <h2>{% if item %}Hizmeti Düzenle{% else %}Yeni Hizmet{% endif %}</h2>
+    <form method="post" enctype="multipart/form-data">
+        <input type="hidden" name="_token" value="{{ csrf.generateToken(token_id) }}">
+        <input type="hidden" name="_token_id" value="{{ token_id }}">
+
+        <label>Başlık
+            <input type="text" name="title" value="{{ item.title|default('') }}" required>
+        </label>
+        <label>Slug
+            <input type="text" name="slug" value="{{ item.slug|default('') }}" required>
+        </label>
+        <label>Kısa Açıklama
+            <textarea name="excerpt">{{ item.excerpt|default('') }}</textarea>
+        </label>
+        <label>İçerik
+            <textarea name="content" class="wysiwyg">{{ item.content|default('') }}</textarea>
+        </label>
+        <label>Görsel
+            {% if item and item.image %}
+                <img src="{{ item.image }}" alt="" class="admin-thumb">
+            {% endif %}
+            <input type="file" name="image" accept="image/*">
+        </label>
+        <label>Durum
+            <select name="status">
+                <option value="draft" {% if item.status == 'draft' %}selected{% endif %}>Taslak</option>
+                <option value="published" {% if item.status == 'published' %}selected{% endif %}>Yayında</option>
+            </select>
+        </label>
+        <button type="submit" class="admin-button">Kaydet</button>
+    </form>
+</div>
+{% endblock %}

@@ -1,0 +1,52 @@
+{% extends 'admin/layout.twig' %}
+
+{% block title %}Bildirim Ayarları{% endblock %}
+
+{% block content %}
+<div class="admin-card">
+    <h2>Bildirim Ayarları</h2>
+    <form method="post">
+        <input type="hidden" name="_token" value="{{ csrf.generateToken(token_id) }}">
+        <input type="hidden" name="_token_id" value="{{ token_id }}">
+
+        <fieldset>
+            <legend>Sipariş Bildirimleri</legend>
+            <label>Aktif mi?
+                <select name="order_notifications">
+                    <option value="0" {% if settings.order_notifications.setting_value == '0' %}selected{% endif %}>Kapalı</option>
+                    <option value="1" {% if settings.order_notifications.setting_value == '1' %}selected{% endif %}>Açık</option>
+                </select>
+            </label>
+        </fieldset>
+
+        <fieldset>
+            <legend>Mail Ayarları</legend>
+            <label>SMTP DSN
+                <input type="text" name="smtp_dsn" value="{{ settings.smtp_dsn.setting_value|default('') }}">
+            </label>
+        </fieldset>
+
+        <fieldset>
+            <legend>SMS Bildirimleri</legend>
+            <label>Sağlayıcı
+                <select name="sms_provider">
+                    <option value="none" {% if settings.sms_provider.setting_value == 'none' %}selected{% endif %}>Seçilmedi</option>
+                    <option value="kobikom" {% if settings.sms_provider.setting_value == 'kobikom' %}selected{% endif %}>Kobikom</option>
+                    <option value="netgsm" {% if settings.sms_provider.setting_value == 'netgsm' %}selected{% endif %}>NetGSM</option>
+                </select>
+            </label>
+            <label>API Kullanıcı Adı
+                <input type="text" name="sms_username" value="{{ settings.sms_username.setting_value|default('') }}">
+            </label>
+            <label>API Şifre
+                <input type="text" name="sms_password" value="{{ settings.sms_password.setting_value|default('') }}">
+            </label>
+            <label>Başlık
+                <input type="text" name="sms_header" value="{{ settings.sms_header.setting_value|default('') }}">
+            </label>
+        </fieldset>
+
+        <button type="submit" class="admin-button">Kaydet</button>
+    </form>
+</div>
+{% endblock %}

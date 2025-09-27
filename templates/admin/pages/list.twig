@@ -1,0 +1,41 @@
+{% extends 'admin/layout.twig' %}
+
+{% block title %}Sayfalar{% endblock %}
+
+{% block content %}
+<div class="admin-card">
+    <div class="admin-card__header">
+        <h2>Sayfalar</h2>
+        <a class="admin-button" href="/admin/page_add.php">Yeni Sayfa</a>
+    </div>
+    <table class="admin-table">
+        <thead>
+        <tr>
+            <th>Başlık</th>
+            <th>Durum</th>
+            <th>İşlemler</th>
+        </tr>
+        </thead>
+        <tbody>
+        {% for item in items %}
+            <tr>
+                <td>{{ item.title }}</td>
+                <td>{{ item.status }}</td>
+                <td class="admin-table__actions">
+                    <a href="/admin/page_edit.php?id={{ item.id }}">Düzenle</a>
+                    <form method="post" action="/admin/page_delete.php?id={{ item.id }}" onsubmit="return confirm('Sayfa silinsin mi?');">
+                        <input type="hidden" name="_token" value="{{ csrf.generateToken('pages_form') }}">
+                        <input type="hidden" name="_token_id" value="pages_form">
+                        <button type="submit">Sil</button>
+                    </form>
+                </td>
+            </tr>
+        {% else %}
+            <tr>
+                <td colspan="3">Kayıt yok.</td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

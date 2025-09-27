@@ -1,0 +1,40 @@
+{% extends 'admin/layout.twig' %}
+
+{% block title %}Yorum Formu{% endblock %}
+
+{% block content %}
+<div class="admin-card">
+    <h2>{% if item %}Yorumu Düzenle{% else %}Yeni Yorum{% endif %}</h2>
+    <form method="post">
+        <input type="hidden" name="_token" value="{{ csrf.generateToken(token_id) }}">
+        <input type="hidden" name="_token_id" value="{{ token_id }}">
+
+        <label>Ad Soyad
+            <input type="text" name="author_name" value="{{ item.author_name|default('') }}" required>
+        </label>
+        <label>E-posta
+            <input type="email" name="author_email" value="{{ item.author_email|default('') }}">
+        </label>
+        <label>İçerik
+            <textarea name="content">{{ item.content|default('') }}</textarea>
+        </label>
+        <label>Hedef Tipi
+            <select name="related_type">
+                <option value="service" {% if item.related_type == 'service' %}selected{% endif %}>Hizmet</option>
+                <option value="blog" {% if item.related_type == 'blog' %}selected{% endif %}>Blog</option>
+            </select>
+        </label>
+        <label>Hedef ID
+            <input type="number" name="related_id" value="{{ item.related_id|default(0) }}" min="0">
+        </label>
+        <label>Durum
+            <select name="status">
+                <option value="pending" {% if item.status == 'pending' %}selected{% endif %}>Onay Bekliyor</option>
+                <option value="approved" {% if item.status == 'approved' %}selected{% endif %}>Onaylandı</option>
+                <option value="rejected" {% if item.status == 'rejected' %}selected{% endif %}>Reddedildi</option>
+            </select>
+        </label>
+        <button type="submit" class="admin-button">Kaydet</button>
+    </form>
+</div>
+{% endblock %}

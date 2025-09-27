@@ -1,0 +1,21 @@
+{% include 'admin/partials/header.twig' %}
+<section class="admin-body">
+    <div class="admin-card">
+        <h2>Genel Görünüm</h2>
+        <div class="metric-grid">
+            <div class="metric">
+                <span class="metric-label">Hizmetler</span>
+                <span class="metric-value">{{ metrics.services }}</span>
+            </div>
+            <div class="metric">
+                <span class="metric-label">Blog Yazıları</span>
+                <span class="metric-value">{{ metrics.blogs }}</span>
+            </div>
+            <div class="metric">
+                <span class="metric-label">Mesajlar</span>
+                <span class="metric-value">{{ metrics.messages }}</span>
+            </div>
+        </div>
+    </div>
+</section>
+{% include 'admin/partials/footer.twig' %}

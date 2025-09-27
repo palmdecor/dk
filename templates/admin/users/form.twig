@@ -1,0 +1,64 @@
+{% extends 'admin/layout.twig' %}
+
+{% block title %}Kullanıcı Formu{% endblock %}
+
+{% block content %}
+<div class="admin-card">
+    <h2>{% if item %}Kullanıcıyı Düzenle{% else %}Yeni Kullanıcı{% endif %}</h2>
+    <form method="post">
+        <input type="hidden" name="_token" value="{{ csrf.generateToken(token_id) }}">
+        <input type="hidden" name="_token_id" value="{{ token_id }}">
+
+        <label>Ad Soyad
+            <input type="text" name="name" value="{{ item.name|default('') }}" required>
+        </label>
+        <label>E-posta
+            <input type="email" name="email" value="{{ item.email|default('') }}" required>
+        </label>
+        <label>Parola {% if item %}<small>Boş bırakılırsa değişmez</small>{% endif %}
+            <input type="password" name="password">
+        </label>
+        <label>Rol
+            <select name="role">
+                {% set currentRole = item.role|default('editor') %}
+                <option value="admin" {% if currentRole == 'admin' %}selected{% endif %}>Admin</option>
+                <option value="editor" {% if currentRole == 'editor' %}selected{% endif %}>Editör</option>
+                <option value="staff" {% if currentRole == 'staff' %}selected{% endif %}>Çalışan</option>
+            </select>
+        </label>
+
+        {% set permissionList = [
+            'services.view','services.create','services.edit','services.delete',
+            'blogs.view','blogs.create','blogs.edit','blogs.delete',
+            'pages.view','pages.create','pages.edit','pages.delete',
+            'sliders.view','sliders.create','sliders.edit','sliders.delete',
+            'faq.view','faq.create','faq.edit','faq.delete',
+            'comments.view','comments.create','comments.edit','comments.delete',
+            'messages.view','messages.edit','messages.delete',
+            'users.view','users.create','users.edit','users.delete',
+            'settings.general','settings.seo','settings.payment','settings.notifications'
+        ] %}
+        {% set assigned = item.permissions is defined ? item.permissions|json_decode : [] %}
+
+        <fieldset>
+            <legend>Yetkiler</legend>
+            <div class="permission-grid">
+                {% for permission in permissionList %}
+                    <label>
+                        <input type="checkbox" name="permissions[]" value="{{ permission }}" {% if permission in assigned %}checked{% endif %}>
+                        {{ permission }}
+                    </label>
+                {% endfor %}
+            </div>
+        </fieldset>
+
+        <label>Durum
+            <select name="status">
+                <option value="active" {% if item.status == 'active' %}selected{% endif %}>Aktif</option>
+                <option value="passive" {% if item.status == 'passive' %}selected{% endif %}>Pasif</option>
+            </select>
+        </label>
+        <button type="submit" class="admin-button">Kaydet</button>
+    </form>
+</div>
+{% endblock %}

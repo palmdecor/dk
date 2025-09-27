@@ -1,0 +1,60 @@
+{% include 'partials/header.twig' %}
+<section class="hero">
+    <div class="container">
+        <div class="hero-slider">
+            {% for slide in sliders %}
+                <div class="hero-slide" style="background-image: url('{{ slide.image }}')">
+                    <h2>{{ slide.title }}</h2>
+                    <p>{{ slide.subtitle }}</p>
+                    {% if slide.button_url %}
+                        <a href="{{ slide.button_url }}" class="button">{{ slide.button_text }}</a>
+                    {% endif %}
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+<section class="services">
+    <div class="container">
+        <h2>Hizmetlerimiz</h2>
+        <div class="grid">
+            {% for service in services %}
+                <article class="card">
+                    <img src="{{ service.image }}" alt="{{ service.title }}">
+                    <h3>{{ service.title }}</h3>
+                    <p>{{ service.excerpt }}</p>
+                    <a href="/service.php?slug={{ service.slug }}" class="button-outline">İncele</a>
+                </article>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+<section class="faq">
+    <div class="container">
+        <h2>Sıkça Sorulan Sorular</h2>
+        <div class="accordion">
+            {% for item in faq %}
+                <details>
+                    <summary>{{ item.question }}</summary>
+                    <p>{{ item.answer }}</p>
+                </details>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+<section class="blog">
+    <div class="container">
+        <h2>Blog</h2>
+        <div class="grid">
+            {% for post in blog %}
+                <article class="card">
+                    <img src="{{ post.image }}" alt="{{ post.title }}">
+                    <h3>{{ post.title }}</h3>
+                    <p>{{ post.excerpt }}</p>
+                    <a href="/blog_detail.php?slug={{ post.slug }}" class="button-outline">Oku</a>
+                </article>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+{% include 'partials/footer.twig' %}
