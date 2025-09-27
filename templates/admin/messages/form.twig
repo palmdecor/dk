@@ -1,0 +1,37 @@
+{% extends 'admin/layout.twig' %}
+
+{% block title %}Mesaj Detayı{% endblock %}
+
+{% block content %}
+<div class="admin-card">
+    <h2>{% if item %}Mesaj Detayı{% else %}Manuel Mesaj Oluştur{% endif %}</h2>
+    <form method="post">
+        <input type="hidden" name="_token" value="{{ csrf.generateToken(token_id) }}">
+        <input type="hidden" name="_token_id" value="{{ token_id }}">
+        <div class="form-grid">
+            <label>Ad Soyad
+                <input type="text" name="name" value="{{ item.name|default('') }}" {% if item %}readonly{% endif %}>
+            </label>
+            <label>E-posta
+                <input type="email" name="email" value="{{ item.email|default('') }}" {% if item %}readonly{% endif %}>
+            </label>
+            <label>Telefon
+                <input type="text" name="phone" value="{{ item.phone|default('') }}" {% if item %}readonly{% endif %}>
+            </label>
+            <label>Konu
+                <input type="text" name="subject" value="{{ item.subject|default('') }}" {% if item %}readonly{% endif %}>
+            </label>
+        </div>
+        <label>Mesaj
+            <textarea name="message" rows="6" {% if item %}readonly{% endif %}>{{ item.message|default('') }}</textarea>
+        </label>
+        <label>Durum
+            <select name="is_read">
+                <option value="0" {% if not item or not item.is_read %}selected{% endif %}>Okunmadı</option>
+                <option value="1" {% if item and item.is_read %}selected{% endif %}>Okundu</option>
+            </select>
+        </label>
+        <button type="submit" class="admin-button">Kaydet</button>
+    </form>
+</div>
+{% endblock %}

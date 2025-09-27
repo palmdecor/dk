@@ -1,0 +1,51 @@
+{% extends 'admin/layout.twig' %}
+
+{% block title %}Genel Ayarlar{% endblock %}
+
+{% block content %}
+<div class="admin-card">
+    <h2>Genel Site Ayarları</h2>
+    <form method="post" enctype="multipart/form-data">
+        <input type="hidden" name="_token" value="{{ csrf.generateToken(token_id) }}">
+        <input type="hidden" name="_token_id" value="{{ token_id }}">
+
+        <label>Site Adı
+            <input type="text" name="site_name" value="{{ settings.site_name.setting_value|default('') }}">
+        </label>
+        <label>Logo URL
+            <input type="text" name="logo" value="{{ settings.logo.setting_value|default('') }}">
+        </label>
+        <label>Favicon URL
+            <input type="text" name="favicon" value="{{ settings.favicon.setting_value|default('') }}">
+        </label>
+        <label>Bakım Modu
+            <select name="maintenance_mode">
+                <option value="0" {% if settings.maintenance_mode.setting_value is defined and settings.maintenance_mode.setting_value == '0' %}selected{% endif %}>Kapalı</option>
+                <option value="1" {% if settings.maintenance_mode.setting_value is defined and settings.maintenance_mode.setting_value == '1' %}selected{% endif %}>Açık</option>
+            </select>
+        </label>
+        <label>Copyright
+            <input type="text" name="copyright" value="{{ settings.copyright.setting_value|default('') }}">
+        </label>
+        <label>Adres
+            <textarea name="address">{{ settings.address.setting_value|default('') }}</textarea>
+        </label>
+        <label>Google Maps Linki
+            <input type="url" name="google_maps" value="{{ settings.google_maps.setting_value|default('') }}">
+        </label>
+        <label>Mail Adresi
+            <input type="email" name="email" value="{{ settings.email.setting_value|default('') }}">
+        </label>
+        <label>Telefon
+            <input type="text" name="phone" value="{{ settings.phone.setting_value|default('') }}">
+        </label>
+        <label>Header HTML
+            <textarea name="header_html" class="wysiwyg">{{ settings.header_html.setting_value|default('') }}</textarea>
+        </label>
+        <label>Footer HTML
+            <textarea name="footer_html" class="wysiwyg">{{ settings.footer_html.setting_value|default('') }}</textarea>
+        </label>
+        <button type="submit" class="admin-button">Kaydet</button>
+    </form>
+</div>
+{% endblock %}

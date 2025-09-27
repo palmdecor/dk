@@ -1,0 +1,13 @@
+{% include 'partials/header.twig' %}
+<section class="page-header">
+    <div class="container">
+        <h1>{{ service.title }}</h1>
+    </div>
+</section>
+<section class="page-content">
+    <div class="container">
+        <img class="hero-image" src="{{ service.image }}" alt="{{ service.title }}">
+        <article class="content">{{ service.content|raw }}</article>
+    </div>
+</section>
+{% include 'partials/footer.twig' %}

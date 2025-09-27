@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Yönetim Paneli{% endblock %}</title>
+    <link rel="stylesheet" href="/assets/css/admin.css">
+</head>
+<body>
+<header class="admin-header">
+    <h1>Yönetim Paneli</h1>
+    {% if currentUser %}
+        <div class="admin-user">Hoş geldin, {{ currentUser.name }}</div>
+    {% endif %}
+</header>
+<div class="admin-wrapper">
+    {% include 'admin/partials/sidebar.twig' %}
+    <main class="admin-content">

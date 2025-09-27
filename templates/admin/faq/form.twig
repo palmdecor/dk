@@ -1,0 +1,30 @@
+{% extends 'admin/layout.twig' %}
+
+{% block title %}SSS Formu{% endblock %}
+
+{% block content %}
+<div class="admin-card">
+    <h2>{% if item %}Soruyu Düzenle{% else %}Yeni Soru{% endif %}</h2>
+    <form method="post">
+        <input type="hidden" name="_token" value="{{ csrf.generateToken(token_id) }}">
+        <input type="hidden" name="_token_id" value="{{ token_id }}">
+
+        <label>Soru
+            <input type="text" name="question" value="{{ item.question|default('') }}" required>
+        </label>
+        <label>Cevap
+            <textarea name="answer">{{ item.answer|default('') }}</textarea>
+        </label>
+        <label>Sıra
+            <input type="number" name="sort_order" value="{{ item.sort_order|default(0) }}" min="0">
+        </label>
+        <label>Durum
+            <select name="status">
+                <option value="draft" {% if item.status == 'draft' %}selected{% endif %}>Taslak</option>
+                <option value="published" {% if item.status == 'published' %}selected{% endif %}>Yayında</option>
+            </select>
+        </label>
+        <button type="submit" class="admin-button">Kaydet</button>
+    </form>
+</div>
+{% endblock %}

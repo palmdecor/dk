@@ -1,0 +1,36 @@
+{% extends 'admin/layout.twig' %}
+
+{% block title %}SEO Ayarları{% endblock %}
+
+{% block content %}
+<div class="admin-card">
+    <h2>SEO Ayarları</h2>
+    <form method="post">
+        <input type="hidden" name="_token" value="{{ csrf.generateToken(token_id) }}">
+        <input type="hidden" name="_token_id" value="{{ token_id }}">
+
+        <label>Meta Başlık
+            <input type="text" name="meta_title" value="{{ settings.meta_title.setting_value|default('') }}">
+        </label>
+        <label>Meta Açıklama
+            <textarea name="meta_description">{{ settings.meta_description.setting_value|default('') }}</textarea>
+        </label>
+        <label>Anahtar Kelimeler
+            <input type="text" name="meta_keywords" value="{{ settings.meta_keywords.setting_value|default('') }}">
+        </label>
+        <label>OpenGraph Görsel URL
+            <input type="text" name="og_image" value="{{ settings.og_image.setting_value|default('') }}">
+        </label>
+        <label>Twitter Card Tipi
+            <input type="text" name="twitter_card" value="{{ settings.twitter_card.setting_value|default('summary_large_image') }}">
+        </label>
+        <label>Robots.txt İçeriği
+            <textarea name="robots">{{ settings.robots.setting_value|default('User-agent: *\nAllow: /') }}</textarea>
+        </label>
+        <button type="submit" class="admin-button">Kaydet</button>
+    </form>
+    <div class="admin-card__footer">
+        <p>Site haritası oluşturmak için <code>php bin/console sitemap:generate</code> komutunu çalıştırabilirsiniz.</p>
+    </div>
+</div>
+{% endblock %}

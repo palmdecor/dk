@@ -1,0 +1,50 @@
+{% include 'partials/header.twig' %}
+<section class="page-header">
+    <div class="container">
+        <h1>İletişim</h1>
+    </div>
+</section>
+<section class="contact">
+    <div class="container">
+        <div class="grid">
+            <div>
+                {% if success %}
+                    <div class="alert alert-success">{{ success }}</div>
+                {% endif %}
+                {% if error %}
+                    <div class="alert alert-error">{{ error }}</div>
+                {% endif %}
+                <h2>Bize Ulaşın</h2>
+                <form method="post">
+                    <label>Ad Soyad
+                        <input type="text" name="name" required>
+                    </label>
+                    <label>E-posta
+                        <input type="email" name="email" required>
+                    </label>
+                    <label>Telefon
+                        <input type="text" name="phone">
+                    </label>
+                    <label>Konu
+                        <input type="text" name="subject" required>
+                    </label>
+                    <label>Mesaj
+                        <textarea name="message" required></textarea>
+                    </label>
+                    <input type="hidden" name="_token" value="{{ csrf_token }}">
+                    <button type="submit" class="button">Gönder</button>
+                </form>
+            </div>
+            <div>
+                <h2>İletişim Bilgileri</h2>
+                <p><strong>Adres:</strong> {{ site.address }}</p>
+                <p><strong>E-posta:</strong> <a href="mailto:{{ site.email }}">{{ site.email }}</a></p>
+                <p><strong>Telefon:</strong> <a href="tel:{{ site.phone }}">{{ site.phone }}</a></p>
+                {% if site.google_maps %}
+                    <a class="button-outline" href="{{ site.google_maps }}" target="_blank">Haritada Gör</a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</section>
+{% include 'partials/footer.twig' %}

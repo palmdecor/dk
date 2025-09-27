@@ -1,0 +1,45 @@
+{% extends 'admin/layout.twig' %}
+
+{% block title %}Ödeme Ayarları{% endblock %}
+
+{% block content %}
+<div class="admin-card">
+    <h2>Ödeme Entegrasyonları</h2>
+    <form method="post">
+        <input type="hidden" name="_token" value="{{ csrf.generateToken(token_id) }}">
+        <input type="hidden" name="_token_id" value="{{ token_id }}">
+
+        <fieldset>
+            <legend>PayTR</legend>
+            <label>Merchant ID
+                <input type="text" name="paytr_merchant_id" value="{{ settings.paytr_merchant_id.setting_value|default('') }}">
+            </label>
+            <label>Merchant Key
+                <input type="text" name="paytr_merchant_key" value="{{ settings.paytr_merchant_key.setting_value|default('') }}">
+            </label>
+            <label>Merchant Salt
+                <input type="text" name="paytr_merchant_salt" value="{{ settings.paytr_merchant_salt.setting_value|default('') }}">
+            </label>
+        </fieldset>
+
+        <fieldset>
+            <legend>Shopier</legend>
+            <label>API Key
+                <input type="text" name="shopier_api_key" value="{{ settings.shopier_api_key.setting_value|default('') }}">
+            </label>
+            <label>API Secret
+                <input type="text" name="shopier_api_secret" value="{{ settings.shopier_api_secret.setting_value|default('') }}">
+            </label>
+        </fieldset>
+
+        <fieldset>
+            <legend>Banka Bilgileri</legend>
+            <label>Hesap Bilgileri (JSON)
+                <textarea name="bank_accounts">{{ settings.bank_accounts.setting_value|default('[]') }}</textarea>
+            </label>
+        </fieldset>
+
+        <button type="submit" class="admin-button">Kaydet</button>
+    </form>
+</div>
+{% endblock %}

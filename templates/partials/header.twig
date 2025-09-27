@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}{{ site.meta_title|default('Kurumsal Web Sitesi') }}{% endblock %}</title>
+    <meta name="description" content="{{ site.meta_description|default('') }}">
+    <meta name="keywords" content="{{ site.meta_keywords|default('') }}">
+    <link rel="stylesheet" href="/assets/css/site.css">
+</head>
+<body>
+<header class="site-header">
+    <div class="container">
+        <a class="logo" href="/">{{ site.site_name|default('Firma Adı') }}</a>
+        <nav class="main-nav">
+            <a href="/">Ana Sayfa</a>
+            <a href="/services.php">Hizmetler</a>
+            <a href="/blog.php">Blog</a>
+            <a href="/contact.php">İletişim</a>
+        </nav>
+    </div>
+</header>
+<main>

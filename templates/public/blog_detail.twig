@@ -1,0 +1,24 @@
+{% include 'partials/header.twig' %}
+<section class="page-header">
+    <div class="container">
+        <h1>{{ post.title }}</h1>
+    </div>
+</section>
+<section class="page-content">
+    <div class="container">
+        <img class="hero-image" src="{{ post.image }}" alt="{{ post.title }}">
+        <article class="content">{{ post.content|raw }}</article>
+        <section class="comments">
+            <h2>Yorumlar</h2>
+            {% for comment in comments %}
+                <div class="comment">
+                    <strong>{{ comment.author_name }}</strong>
+                    <p>{{ comment.content }}</p>
+                </div>
+            {% else %}
+                <p>Henüz yorum yok.</p>
+            {% endfor %}
+        </section>
+    </div>
+</section>
+{% include 'partials/footer.twig' %}

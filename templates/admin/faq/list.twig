@@ -1,0 +1,43 @@
+{% extends 'admin/layout.twig' %}
+
+{% block title %}Sıkça Sorulan Sorular{% endblock %}
+
+{% block content %}
+<div class="admin-card">
+    <div class="admin-card__header">
+        <h2>SSS</h2>
+        <a class="admin-button" href="/admin/faq_add.php">Yeni Soru</a>
+    </div>
+    <table class="admin-table">
+        <thead>
+        <tr>
+            <th>Soru</th>
+            <th>Sıra</th>
+            <th>Durum</th>
+            <th>İşlemler</th>
+        </tr>
+        </thead>
+        <tbody>
+        {% for item in items %}
+            <tr>
+                <td>{{ item.question }}</td>
+                <td>{{ item.sort_order }}</td>
+                <td>{{ item.status }}</td>
+                <td class="admin-table__actions">
+                    <a href="/admin/faq_edit.php?id={{ item.id }}">Düzenle</a>
+                    <form method="post" action="/admin/faq_delete.php?id={{ item.id }}" onsubmit="return confirm('Silinsin mi?');">
+                        <input type="hidden" name="_token" value="{{ csrf.generateToken('faq_form') }}">
+                        <input type="hidden" name="_token_id" value="faq_form">
+                        <button type="submit">Sil</button>
+                    </form>
+                </td>
+            </tr>
+        {% else %}
+            <tr>
+                <td colspan="4">Henüz SSS eklenmemiş.</td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}
