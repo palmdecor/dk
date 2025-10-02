@@ -1,6 +1,6 @@
-# Interaktif Kredi Platformu
+# Dönüşüm Kredi Platformu
 
-Laravel 11 ile geliştirilen bu proje, interaktifkredi.com.tr benzeri modern bir kredi başvuru deneyimi sunar. Sistem, kredi hesaplama modülü, kullanıcı üyeliği, başvuru yönetimi ve CRM benzeri bir yönetim paneli içerir.
+Laravel 11 ile geliştirilen bu proje, dönüşümkredi.com.tr benzeri modern bir kredi başvuru deneyimi sunar. Sistem, kredi hesaplama modülü, kullanıcı üyeliği, başvuru yönetimi ve CRM benzeri bir yönetim paneli içerir.
 
 ## Özellikler
 
@@ -27,7 +27,7 @@ php artisan serve
 
 Admin paneline giriş için seeding sonrasında aşağıdaki kullanıcı oluşturulur:
 
-- E-posta: `admin@interaktifkredi.com.tr`
+- E-posta: `admin@donusum.com.tr`
 - Şifre: `Password123!`
 
 ## Dizayn ve Teknoloji
