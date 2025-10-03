@@ -11,10 +11,12 @@ if ($amount === false || $term === false || $amount <= 0 || $term <= 0) {
     exit;
 }
 
-$monthlyPayment = calculate_monthly_payment($amount, $term, $config['app']['interest_rate']);
+$monthlyRate = get_interest_rate($pdo, (float) $config['app']['interest_rate']);
+$monthlyPayment = calculate_monthly_payment($amount, $term, $monthlyRate);
 
 echo json_encode([
     'amount' => $amount,
     'term' => $term,
     'monthly_payment' => round($monthlyPayment, 2),
+    'monthly_rate' => $monthlyRate,
 ]);

@@ -65,6 +65,86 @@ function calculate_monthly_payment(float $principal, int $months, float $monthly
     return $total / $months;
 }
 
+function get_setting(PDO $pdo, string $key, $default = null)
+{
+    if (!isset($GLOBALS['__settings_cache']) || !is_array($GLOBALS['__settings_cache'])) {
+        $GLOBALS['__settings_cache'] = [];
+    }
+
+    if (array_key_exists($key, $GLOBALS['__settings_cache'])) {
+        return $GLOBALS['__settings_cache'][$key];
+    }
+
+    $stmt = $pdo->prepare('SELECT `value` FROM settings WHERE `key` = :key LIMIT 1');
+    $stmt->execute(['key' => $key]);
+    $value = $stmt->fetchColumn();
+
+    if ($value === false) {
+        $GLOBALS['__settings_cache'][$key] = $default;
+        return $default;
+    }
+
+    $GLOBALS['__settings_cache'][$key] = $value;
+    return $value;
+}
+
+function set_setting(PDO $pdo, string $key, string $value): void
+{
+    $stmt = $pdo->prepare('INSERT INTO settings (`key`, `value`) VALUES (:key, :value)
+        ON DUPLICATE KEY UPDATE `value` = VALUES(`value`), updated_at = CURRENT_TIMESTAMP');
+    $stmt->execute(['key' => $key, 'value' => $value]);
+
+    if (!isset($GLOBALS['__settings_cache']) || !is_array($GLOBALS['__settings_cache'])) {
+        $GLOBALS['__settings_cache'] = [];
+    }
+    $GLOBALS['__settings_cache'][$key] = $value;
+}
+
+function get_interest_rate(PDO $pdo, float $default): float
+{
+    $stored = get_setting($pdo, 'interest_rate');
+    if ($stored !== null && $stored !== '' && is_numeric($stored)) {
+        return (float) $stored;
+    }
+
+    return $default;
+}
+
+function get_homepage_content(PDO $pdo, array $translations): array
+{
+    $defaults = [
+        'meta_title' => __t('meta.home.title', $translations),
+        'meta_description' => __t('meta.home.description', $translations),
+        'hero_title' => __t('hero.title', $translations),
+        'hero_subtitle' => __t('hero.subtitle', $translations),
+        'advantages' => [
+            ['title' => __t('advantages.fast', $translations), 'description' => __t('advantages.fast.desc', $translations)],
+            ['title' => __t('advantages.support', $translations), 'description' => __t('advantages.support.desc', $translations)],
+            ['title' => __t('advantages.secure', $translations), 'description' => __t('advantages.secure.desc', $translations)],
+        ],
+        'testimonials' => [
+            ['name' => __t('testimonials.1.name', $translations), 'text' => __t('testimonials.1', $translations)],
+            ['name' => __t('testimonials.2.name', $translations), 'text' => __t('testimonials.2', $translations)],
+            ['name' => __t('testimonials.3.name', $translations), 'text' => __t('testimonials.3', $translations)],
+        ],
+    ];
+
+    $stored = get_setting($pdo, 'homepage_content');
+    if (is_string($stored) && $stored !== '') {
+        $decoded = json_decode($stored, true);
+        if (is_array($decoded)) {
+            $defaults = array_replace_recursive($defaults, $decoded);
+        }
+    }
+
+    return $defaults;
+}
+
+function save_homepage_content(PDO $pdo, array $content): void
+{
+    set_setting($pdo, 'homepage_content', json_encode($content, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
+}
+
 function seo_meta_tags(array $translations, string $titleKey, string $descriptionKey): array
 {
     return [

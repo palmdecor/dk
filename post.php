@@ -53,8 +53,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 $meta = [
-    'title' => sprintf(__t('meta.blog_post.title', $translations), $post['title']),
-    'description' => mb_substr(strip_tags($post['excerpt'] ?: $post['body']), 0, 150),
+    'title' => !empty($post['meta_title']) ? $post['meta_title'] : sprintf(__t('meta.blog_post.title', $translations), $post['title']),
+    'description' => !empty($post['meta_description']) ? $post['meta_description'] : mb_substr(strip_tags($post['excerpt'] ?: $post['body']), 0, 150),
 ];
 
 $commentStmt = $pdo->prepare("SELECT * FROM comments WHERE post_id = :post_id AND status = 'approved' ORDER BY created_at DESC");
@@ -74,6 +74,11 @@ include __DIR__ . '/partials/flash.php';
                     <div class="text-muted small mb-4">
                         <?= date('d.m.Y', strtotime($post['published_at'] ?? $post['created_at'])) ?>
                     </div>
+                    <?php if (!empty($post['image_path'])): ?>
+                        <figure class="mb-4">
+                            <img src="<?= htmlspecialchars($post['image_path']) ?>" alt="<?= htmlspecialchars($post['title']) ?>" class="img-fluid rounded shadow-sm w-100">
+                        </figure>
+                    <?php endif; ?>
                     <div class="cms-content">
                         <?= $post['body'] ?>
                     </div>

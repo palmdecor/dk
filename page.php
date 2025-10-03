@@ -22,8 +22,8 @@ if ($slug === '' || !$page) {
 }
 
 $meta = [
-    'title' => sprintf(__t('meta.page.title', $translations), $page['title']),
-    'description' => __t('meta.page.description', $translations),
+    'title' => !empty($page['meta_title']) ? $page['meta_title'] : sprintf(__t('meta.page.title', $translations), $page['title']),
+    'description' => !empty($page['meta_description']) ? $page['meta_description'] : __t('meta.page.description', $translations),
 ];
 
 include __DIR__ . '/partials/header.php';

@@ -18,6 +18,9 @@ include __DIR__ . '/partials/header.php';
             <?php foreach ($posts as $post): ?>
                 <div class="col-md-6 col-lg-4">
                     <article class="card h-100 shadow-sm border-0">
+                        <?php if (!empty($post['image_path'])): ?>
+                            <img src="<?= htmlspecialchars($post['image_path']) ?>" class="card-img-top" alt="<?= htmlspecialchars($post['title']) ?>">
+                        <?php endif; ?>
                         <div class="card-body d-flex flex-column">
                             <h2 class="h5 fw-bold"><a href="post.php?slug=<?= urlencode($post['slug']) ?>" class="stretched-link text-decoration-none"><?= htmlspecialchars($post['title']) ?></a></h2>
                             <div class="text-muted small mb-2">

@@ -26,3 +26,4 @@ require_once __DIR__ . '/functions.php';
 
 $lang = determine_language($config['app']);
 $translations = load_translations($lang);
+$config['app']['interest_rate'] = get_interest_rate($pdo, (float) $config['app']['interest_rate']);

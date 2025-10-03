@@ -1,8 +1,14 @@
 <?php
 require __DIR__ . '/includes/bootstrap.php';
-$meta = seo_meta_tags($translations, 'meta.home.title', 'meta.home.description');
+$homepageContent = get_homepage_content($pdo, $translations);
+$meta = [
+    'title' => !empty($homepageContent['meta_title']) ? $homepageContent['meta_title'] : __t('meta.home.title', $translations),
+    'description' => !empty($homepageContent['meta_description']) ? $homepageContent['meta_description'] : __t('meta.home.description', $translations),
+];
 $featuredPosts = latest_posts($pdo, 3);
 $featuredProducts = array_slice(published_products($pdo), 0, 3);
+$interestRate = $config['app']['interest_rate'];
+$advantageIcons = ['bi-lightning-fill', 'bi-headset', 'bi-shield-lock'];
 $flash = get_flash_messages();
 include __DIR__ . '/partials/header.php';
 include __DIR__ . '/partials/flash.php';
@@ -11,15 +17,15 @@ include __DIR__ . '/partials/flash.php';
     <div class="container">
         <div class="row align-items-center">
             <div class="col-lg-6">
-                <h1 class="display-4 fw-bold mb-4"><?= __t('hero.title', $translations) ?></h1>
-                <p class="lead mb-4"><?= __t('hero.subtitle', $translations) ?></p>
+                <h1 class="display-4 fw-bold mb-4"><?= htmlspecialchars($homepageContent['hero_title'] ?? '') ?></h1>
+                <p class="lead mb-4"><?= htmlspecialchars($homepageContent['hero_subtitle'] ?? '') ?></p>
                 <a href="apply.php" class="btn btn-light btn-lg text-primary fw-semibold"><?= __t('nav.apply', $translations) ?></a>
             </div>
             <div class="col-lg-5 offset-lg-1 mt-5 mt-lg-0">
                 <div class="card calculator-card border-0">
                     <div class="card-body p-4">
                         <h5 class="fw-semibold mb-3"><?= __t('calculator.monthly_payment', $translations) ?></h5>
-                        <form id="calculator-form" data-monthly-rate="<?= $config['app']['interest_rate'] ?>">
+                        <form id="calculator-form" data-monthly-rate="<?= htmlspecialchars($interestRate) ?>">
                             <div class="mb-3">
                                 <label for="loanAmount" class="form-label"><?= __t('calculator.amount', $translations) ?></label>
                                 <input type="number" min="1000" step="500" class="form-control" id="loanAmount" placeholder="50000">
@@ -44,24 +50,14 @@ include __DIR__ . '/partials/flash.php';
             <h2 class="fw-bold"><?= __t('advantages.title', $translations) ?></h2>
         </div>
         <div class="row g-4">
-            <div class="col-md-4">
-                <div class="p-4 bg-white advantage-card h-100">
-                    <h5 class="fw-semibold mb-2"><i class="bi bi-lightning-fill text-primary me-2"></i><?= __t('advantages.fast', $translations) ?></h5>
-                    <p class="text-muted mb-0"><?= __t('advantages.fast.desc', $translations) ?></p>
+            <?php foreach ($homepageContent['advantages'] as $index => $advantage): ?>
+                <div class="col-md-4">
+                    <div class="p-4 bg-white advantage-card h-100">
+                        <h5 class="fw-semibold mb-2"><i class="bi <?= htmlspecialchars($advantageIcons[$index] ?? 'bi-star') ?> text-primary me-2"></i><?= htmlspecialchars($advantage['title'] ?? '') ?></h5>
+                        <p class="text-muted mb-0"><?= htmlspecialchars($advantage['description'] ?? '') ?></p>
+                    </div>
                 </div>
-            </div>
-            <div class="col-md-4">
-                <div class="p-4 bg-white advantage-card h-100">
-                    <h5 class="fw-semibold mb-2"><i class="bi bi-headset text-primary me-2"></i><?= __t('advantages.support', $translations) ?></h5>
-                    <p class="text-muted mb-0"><?= __t('advantages.support.desc', $translations) ?></p>
-                </div>
-            </div>
-            <div class="col-md-4">
-                <div class="p-4 bg-white advantage-card h-100">
-                    <h5 class="fw-semibold mb-2"><i class="bi bi-shield-lock text-primary me-2"></i><?= __t('advantages.secure', $translations) ?></h5>
-                    <p class="text-muted mb-0"><?= __t('advantages.secure.desc', $translations) ?></p>
-                </div>
-            </div>
+            <?php endforeach; ?>
         </div>
     </div>
 </section>
@@ -71,24 +67,14 @@ include __DIR__ . '/partials/flash.php';
             <h2 class="fw-bold"><?= __t('testimonials.title', $translations) ?></h2>
         </div>
         <div class="row g-4">
-            <div class="col-md-4">
-                <div class="testimonial-card">
-                    <p class="mb-3 text-muted"><?= __t('testimonials.1', $translations) ?></p>
-                    <div class="fw-semibold"><?= __t('testimonials.1.name', $translations) ?></div>
+            <?php foreach ($homepageContent['testimonials'] as $testimonial): ?>
+                <div class="col-md-4">
+                    <div class="testimonial-card">
+                        <p class="mb-3 text-muted"><?= htmlspecialchars($testimonial['text'] ?? '') ?></p>
+                        <div class="fw-semibold"><?= htmlspecialchars($testimonial['name'] ?? '') ?></div>
+                    </div>
                 </div>
-            </div>
-            <div class="col-md-4">
-                <div class="testimonial-card">
-                    <p class="mb-3 text-muted"><?= __t('testimonials.2', $translations) ?></p>
-                    <div class="fw-semibold"><?= __t('testimonials.2.name', $translations) ?></div>
-                </div>
-            </div>
-            <div class="col-md-4">
-                <div class="testimonial-card">
-                    <p class="mb-3 text-muted"><?= __t('testimonials.3', $translations) ?></p>
-                    <div class="fw-semibold"><?= __t('testimonials.3.name', $translations) ?></div>
-                </div>
-            </div>
+            <?php endforeach; ?>
         </div>
     </div>
 </section>
@@ -103,6 +89,9 @@ include __DIR__ . '/partials/flash.php';
             <?php foreach ($featuredPosts as $post): ?>
                 <div class="col-md-4">
                     <article class="card h-100 shadow-sm border-0">
+                        <?php if (!empty($post['image_path'])): ?>
+                            <img src="<?= htmlspecialchars($post['image_path']) ?>" class="card-img-top" alt="<?= htmlspecialchars($post['title']) ?>">
+                        <?php endif; ?>
                         <div class="card-body d-flex flex-column">
                             <h3 class="h5 fw-bold"><a href="post.php?slug=<?= urlencode($post['slug']) ?>" class="text-decoration-none stretched-link"><?= htmlspecialchars($post['title']) ?></a></h3>
                             <div class="text-muted small mb-2"><?= date('d.m.Y', strtotime($post['published_at'] ?? $post['created_at'])) ?></div>
