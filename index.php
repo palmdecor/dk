@@ -1,6 +1,8 @@
 <?php
 require __DIR__ . '/includes/bootstrap.php';
 $meta = seo_meta_tags($translations, 'meta.home.title', 'meta.home.description');
+$featuredPosts = latest_posts($pdo, 3);
+$featuredProducts = array_slice(published_products($pdo), 0, 3);
 $flash = get_flash_messages();
 include __DIR__ . '/partials/header.php';
 include __DIR__ . '/partials/flash.php';
@@ -90,4 +92,51 @@ include __DIR__ . '/partials/flash.php';
         </div>
     </div>
 </section>
+<?php if (!empty($featuredPosts)): ?>
+<section class="py-5 bg-light">
+    <div class="container">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2 class="fw-bold mb-0"><?= __t('nav.blog', $translations) ?></h2>
+            <a href="blog.php" class="btn btn-outline-primary btn-sm"><?= __t('blog.read_more', $translations) ?></a>
+        </div>
+        <div class="row g-4">
+            <?php foreach ($featuredPosts as $post): ?>
+                <div class="col-md-4">
+                    <article class="card h-100 shadow-sm border-0">
+                        <div class="card-body d-flex flex-column">
+                            <h3 class="h5 fw-bold"><a href="post.php?slug=<?= urlencode($post['slug']) ?>" class="text-decoration-none stretched-link"><?= htmlspecialchars($post['title']) ?></a></h3>
+                            <div class="text-muted small mb-2"><?= date('d.m.Y', strtotime($post['published_at'] ?? $post['created_at'])) ?></div>
+                            <p class="text-muted flex-grow-1"><?= htmlspecialchars($post['excerpt'] ?: mb_substr(strip_tags($post['body']), 0, 100) . '...') ?></p>
+                        </div>
+                    </article>
+                </div>
+            <?php endforeach; ?>
+        </div>
+    </div>
+</section>
+<?php endif; ?>
+<?php if (!empty($featuredProducts)): ?>
+<section class="py-5">
+    <div class="container">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2 class="fw-bold mb-0"><?= __t('nav.products', $translations) ?></h2>
+            <a href="products.php" class="btn btn-outline-primary btn-sm"><?= __t('products.buy', $translations) ?></a>
+        </div>
+        <div class="row g-4">
+            <?php foreach ($featuredProducts as $product): ?>
+                <div class="col-md-4">
+                    <div class="card h-100 shadow-sm border-0">
+                        <div class="card-body d-flex flex-column">
+                            <h3 class="h5 fw-bold mb-2"><?= htmlspecialchars($product['name']) ?></h3>
+                            <div class="text-primary fw-semibold mb-3"><?= format_price((float) $product['price']) ?></div>
+                            <p class="text-muted flex-grow-1"><?= nl2br(htmlspecialchars(mb_substr($product['description'], 0, 120))) ?><?= mb_strlen($product['description']) > 120 ? '...' : '' ?></p>
+                            <a href="products.php" class="btn btn-primary mt-auto"><?= __t('products.buy', $translations) ?></a>
+                        </div>
+                    </div>
+                </div>
+            <?php endforeach; ?>
+        </div>
+    </div>
+</section>
+<?php endif; ?>
 <?php include __DIR__ . '/partials/footer.php'; ?>

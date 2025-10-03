@@ -4,6 +4,14 @@ if (!isset($translations, $config, $lang)) {
 }
 $meta = $meta ?? ['title' => $config['app']['name'], 'description' => $config['app']['name']];
 $currentUrl = rtrim($config['app']['base_url'], '/') . strtok($_SERVER['REQUEST_URI'], '?');
+$navigationPages = $navigationPages ?? [];
+if (empty($navigationPages) && isset($pdo)) {
+    try {
+        $navigationPages = published_pages($pdo);
+    } catch (Throwable $e) {
+        $navigationPages = [];
+    }
+}
 ?>
 <!DOCTYPE html>
 <html lang="<?= htmlspecialchars($lang) ?>">
@@ -30,6 +38,11 @@ $currentUrl = rtrim($config['app']['base_url'], '/') . strtok($_SERVER['REQUEST_
             <ul class="navbar-nav ms-auto align-items-lg-center">
                 <li class="nav-item"><a class="nav-link" href="index.php"><?= __t('nav.home', $translations) ?></a></li>
                 <li class="nav-item"><a class="nav-link" href="apply.php"><?= __t('nav.apply', $translations) ?></a></li>
+                <li class="nav-item"><a class="nav-link" href="blog.php"><?= __t('nav.blog', $translations) ?></a></li>
+                <li class="nav-item"><a class="nav-link" href="products.php"><?= __t('nav.products', $translations) ?></a></li>
+                <?php foreach ($navigationPages as $page): ?>
+                    <li class="nav-item"><a class="nav-link" href="page.php?slug=<?= urlencode($page['slug']) ?>"><?= htmlspecialchars($page['title']) ?></a></li>
+                <?php endforeach; ?>
                 <?php if (current_user()): ?>
                     <li class="nav-item"><a class="nav-link" href="dashboard.php"><?= __t('nav.dashboard', $translations) ?></a></li>
                 <?php endif; ?>

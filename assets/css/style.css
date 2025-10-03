@@ -72,6 +72,41 @@ body {
 .badge-status.approved { background-color: #198754; }
 .badge-status.rejected { background-color: #dc3545; }
 
+.cms-content h1,
+.cms-content h2,
+.cms-content h3,
+.cms-content h4 {
+    margin-top: 1.5rem;
+    margin-bottom: 0.75rem;
+    font-weight: 600;
+}
+
+.cms-content p {
+    line-height: 1.7;
+    margin-bottom: 1rem;
+    color: #495057;
+}
+
+.cms-content ul,
+.cms-content ol {
+    padding-left: 1.25rem;
+    margin-bottom: 1rem;
+}
+
+.cms-content img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 0.5rem;
+}
+
+.cms-content blockquote {
+    padding: 1rem 1.5rem;
+    background: #f8f9fa;
+    border-left: 4px solid #0d6efd;
+    border-radius: 0.75rem;
+    font-style: italic;
+}
+
 .footer {
     margin-top: auto;
 }

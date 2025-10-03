@@ -86,3 +86,72 @@ function get_flash_messages(): array
     unset($_SESSION['flash']);
     return $flash;
 }
+
+function slugify(string $value): string
+{
+    $value = iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $value);
+    $value = strtolower(preg_replace('/[^a-zA-Z0-9]+/', '-', $value));
+    return trim($value, '-') ?: uniqid();
+}
+
+function find_page_by_slug(PDO $pdo, string $slug): ?array
+{
+    $stmt = $pdo->prepare('SELECT * FROM pages WHERE slug = :slug AND status = "published"');
+    $stmt->execute(['slug' => $slug]);
+    $page = $stmt->fetch();
+    return $page ?: null;
+}
+
+function published_pages(PDO $pdo): array
+{
+    $stmt = $pdo->query('SELECT * FROM pages WHERE status = "published" ORDER BY created_at DESC');
+    return $stmt->fetchAll();
+}
+
+function latest_posts(PDO $pdo, int $limit = 5): array
+{
+    $stmt = $pdo->prepare('SELECT * FROM posts WHERE status = "published" ORDER BY published_at DESC LIMIT :limit');
+    $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
+    $stmt->execute();
+    return $stmt->fetchAll();
+}
+
+function published_products(PDO $pdo): array
+{
+    $stmt = $pdo->query('SELECT * FROM products WHERE status = "published" ORDER BY created_at DESC');
+    return $stmt->fetchAll();
+}
+
+function format_price(float $amount): string
+{
+    return number_format($amount, 2, ',', '.') . ' ₺';
+}
+
+function ensure_unique_slug(PDO $pdo, string $table, string $slug, ?int $ignoreId = null): string
+{
+    $allowedTables = ['pages', 'posts', 'products'];
+    if (!in_array($table, $allowedTables, true)) {
+        return $slug;
+    }
+
+    $baseSlug = $slug;
+    $suffix = 1;
+    while (true) {
+        $sql = "SELECT COUNT(*) FROM {$table} WHERE slug = :slug";
+        $params = ['slug' => $slug];
+        if ($ignoreId) {
+            $sql .= ' AND id != :id';
+            $params['id'] = $ignoreId;
+        }
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute($params);
+        $exists = (int) $stmt->fetchColumn() > 0;
+        if (!$exists) {
+            break;
+        }
+        $slug = $baseSlug . '-' . $suffix;
+        $suffix++;
+    }
+
+    return $slug;
+}
