@@ -1,0 +1,31 @@
+CREATE TABLE IF NOT EXISTS users (
+    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    email VARCHAR(150) NOT NULL UNIQUE,
+    password VARCHAR(255) NOT NULL,
+    role ENUM('user', 'admin') NOT NULL DEFAULT 'user',
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS applications (
+    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    user_id INT UNSIGNED NOT NULL,
+    identity_number VARCHAR(11) NOT NULL,
+    monthly_income DECIMAL(12,2) NOT NULL,
+    loan_amount DECIMAL(12,2) NOT NULL,
+    loan_term SMALLINT NOT NULL,
+    phone VARCHAR(20) NOT NULL,
+    address TEXT NOT NULL,
+    status ENUM('pending', 'approved', 'rejected') NOT NULL DEFAULT 'pending',
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME NULL,
+    CONSTRAINT fk_applications_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS password_resets (
+    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    email VARCHAR(150) NOT NULL,
+    token VARCHAR(64) NOT NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    INDEX(email)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
