@@ -9,9 +9,9 @@
             <div class="col-md-3">
                 <h6 class="text-uppercase">Menü</h6>
                 <ul class="list-unstyled">
-                    <li><a class="text-white-50 text-decoration-none" href="terms.php"><?= __t('footer.terms', $translations) ?></a></li>
-                    <li><a class="text-white-50 text-decoration-none" href="kvkk.php"><?= __t('footer.kvkk', $translations) ?></a></li>
-                    <li><a class="text-white-50 text-decoration-none" href="contact.php"><?= __t('nav.contact', $translations) ?></a></li>
+                    <li><a class="text-white-50 text-decoration-none" href="<?= site_url('kullanici-sozlesmesi') ?>"><?= __t('footer.terms', $translations) ?></a></li>
+                    <li><a class="text-white-50 text-decoration-none" href="<?= site_url('kvkk') ?>"><?= __t('footer.kvkk', $translations) ?></a></li>
+                    <li><a class="text-white-50 text-decoration-none" href="<?= site_url('iletisim') ?>"><?= __t('nav.contact', $translations) ?></a></li>
                 </ul>
             </div>
             <div class="col-md-3">

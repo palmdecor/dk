@@ -1,5 +1,7 @@
 <?php
-require __DIR__ . '/includes/bootstrap.php';
+if (!defined('APP_ENTRY')) {
+    require __DIR__ . '/includes/bootstrap.php';
+}
 
 $meta = seo_meta_tags($translations, 'meta.blog.title', 'meta.blog.description');
 
@@ -22,14 +24,14 @@ include __DIR__ . '/partials/header.php';
                             <img src="<?= htmlspecialchars($post['image_path']) ?>" class="card-img-top" alt="<?= htmlspecialchars($post['title']) ?>">
                         <?php endif; ?>
                         <div class="card-body d-flex flex-column">
-                            <h2 class="h5 fw-bold"><a href="post.php?slug=<?= urlencode($post['slug']) ?>" class="stretched-link text-decoration-none"><?= htmlspecialchars($post['title']) ?></a></h2>
+                            <h2 class="h5 fw-bold"><a href="<?= site_url('blog/' . $post['slug']) ?>" class="stretched-link text-decoration-none"><?= htmlspecialchars($post['title']) ?></a></h2>
                             <div class="text-muted small mb-2">
                                 <?= date('d.m.Y', strtotime($post['published_at'] ?? $post['created_at'])) ?> · <?= sprintf(__t('blog.comments', $translations), (int) $post['comment_count']) ?>
                             </div>
                             <p class="text-muted flex-grow-1">
                                 <?= htmlspecialchars($post['excerpt'] ?: mb_substr(strip_tags($post['body']), 0, 120) . '...') ?>
                             </p>
-                            <a href="post.php?slug=<?= urlencode($post['slug']) ?>" class="btn btn-outline-primary mt-3 align-self-start"><?= __t('blog.read_more', $translations) ?></a>
+                            <a href="<?= site_url('blog/' . $post['slug']) ?>" class="btn btn-outline-primary mt-3 align-self-start"><?= __t('blog.read_more', $translations) ?></a>
                         </div>
                     </article>
                 </div>

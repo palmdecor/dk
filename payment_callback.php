@@ -1,5 +1,7 @@
 <?php
-require __DIR__ . '/includes/bootstrap.php';
+if (!defined('APP_ENTRY')) {
+    require __DIR__ . '/includes/bootstrap.php';
+}
 header('Content-Type: application/json');
 
 $orderId = filter_var($_REQUEST['order_id'] ?? null, FILTER_VALIDATE_INT);

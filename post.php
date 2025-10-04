@@ -1,5 +1,7 @@
 <?php
-require __DIR__ . '/includes/bootstrap.php';
+if (!defined('APP_ENTRY')) {
+    require __DIR__ . '/includes/bootstrap.php';
+}
 
 $slug = trim($_GET['slug'] ?? '');
 $post = null;
@@ -11,18 +13,9 @@ if ($slug !== '') {
 
 if ($slug === '' || !$post) {
     http_response_code(404);
-    $meta = ['title' => '404', 'description' => __t('errors.not_found', $translations)];
-    include __DIR__ . '/partials/header.php';
-    ?>
-    <section class="py-5">
-        <div class="container text-center">
-            <h1 class="display-4 fw-bold">404</h1>
-            <p class="lead text-muted"><?= __t('errors.not_found', $translations) ?></p>
-            <a href="blog.php" class="btn btn-primary mt-3"><?= __t('nav.blog', $translations) ?></a>
-        </div>
-    </section>
-    <?php
-    include __DIR__ . '/partials/footer.php';
+    $meta = seo_meta_tags($translations, 'meta.404.title', 'meta.404.description');
+    $flash = get_flash_messages();
+    include __DIR__ . '/views/not-found.php';
     exit;
 }
 
@@ -33,11 +26,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $honeypot = trim($_POST['website'] ?? '');
 
     if ($honeypot !== '') {
-        redirect_with_message('post.php?slug=' . urlencode($slug), 'danger', __t('form.error', $translations));
+        redirect_with_message(site_url('blog/' . $slug), 'danger', __t('form.error', $translations));
     }
 
     if ($name === '' || !$email || $message === '') {
-        redirect_with_message('post.php?slug=' . urlencode($slug), 'danger', __t('form.validation_error', $translations));
+        redirect_with_message(site_url('blog/' . $slug), 'danger', __t('form.validation_error', $translations));
     }
 
     $stmt = $pdo->prepare('INSERT INTO comments (post_id, author_name, author_email, body, status, created_at) VALUES (:post_id, :name, :email, :body, :status, NOW())');
@@ -49,7 +42,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         'status' => 'pending',
     ]);
 
-    redirect_with_message('post.php?slug=' . urlencode($slug), 'success', __t('blog.comment.awaiting', $translations));
+    redirect_with_message(site_url('blog/' . $slug), 'success', __t('blog.comment.awaiting', $translations));
 }
 
 $meta = [
@@ -128,7 +121,7 @@ include __DIR__ . '/partials/flash.php';
                             <h3 class="h6 text-uppercase text-muted mb-3">Son Yazılar</h3>
                             <ul class="list-unstyled mb-0">
                                 <?php foreach (latest_posts($pdo, 5) as $recent): ?>
-                                    <li class="mb-2"><a href="post.php?slug=<?= urlencode($recent['slug']) ?>" class="text-decoration-none"><?= htmlspecialchars($recent['title']) ?></a></li>
+                                    <li class="mb-2"><a href="<?= site_url('blog/' . $recent['slug']) ?>" class="text-decoration-none"><?= htmlspecialchars($recent['title']) ?></a></li>
                                 <?php endforeach; ?>
                             </ul>
                         </div>
@@ -137,7 +130,7 @@ include __DIR__ . '/partials/flash.php';
                         <div class="card-body">
                             <h3 class="h6 text-uppercase text-muted mb-3">Finans Araçları</h3>
                             <p class="small text-muted">Kredi ihtiyacınızı hesaplamak için ana sayfadaki hesaplama aracını kullanın.</p>
-                            <a href="apply.php" class="btn btn-outline-primary btn-sm">Kredi Başvurusu</a>
+                            <a href="<?= site_url('basvuru') ?>" class="btn btn-outline-primary btn-sm">Kredi Başvurusu</a>
                         </div>
                     </div>
                 </aside>

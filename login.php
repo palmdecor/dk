@@ -1,5 +1,7 @@
 <?php
-require __DIR__ . '/includes/bootstrap.php';
+if (!defined('APP_ENTRY')) {
+    require __DIR__ . '/includes/bootstrap.php';
+}
 $meta = seo_meta_tags($translations, 'meta.login.title', 'meta.login.description');
 $errors = [];
 
@@ -21,7 +23,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 'email' => $user['email'],
                 'role' => $user['role'],
             ];
-            redirect_with_message('dashboard.php', 'success', __t('form.success', $translations));
+            redirect_with_message(site_url('dashboard'), 'success', __t('form.success', $translations));
         } else {
             $errors[] = 'Geçersiz e-posta veya şifre.';
         }
@@ -56,7 +58,7 @@ include __DIR__ . '/partials/flash.php';
                             <button type="submit" class="btn btn-primary w-100"><?= __t('auth.login.submit', $translations) ?></button>
                         </form>
                         <p class="mt-3 text-center text-muted">
-                            <?= __t('auth.no_account', $translations) ?> <a href="register.php"><?= __t('nav.register', $translations) ?></a>
+                            <?= __t('auth.no_account', $translations) ?> <a href="<?= site_url('kayit') ?>"><?= __t('nav.register', $translations) ?></a>
                         </p>
                     </div>
                 </div>

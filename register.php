@@ -1,5 +1,7 @@
 <?php
-require __DIR__ . '/includes/bootstrap.php';
+if (!defined('APP_ENTRY')) {
+    require __DIR__ . '/includes/bootstrap.php';
+}
 $meta = seo_meta_tags($translations, 'meta.register.title', 'meta.register.description');
 $errors = [];
 
@@ -27,7 +29,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 'password' => $hash,
                 'role' => 'user',
             ]);
-            redirect_with_message('login.php', 'success', __t('form.success', $translations));
+            redirect_with_message(site_url('giris'), 'success', __t('form.success', $translations));
         }
     }
 }
@@ -68,7 +70,7 @@ include __DIR__ . '/partials/flash.php';
                             <button type="submit" class="btn btn-primary w-100"><?= __t('auth.register.submit', $translations) ?></button>
                         </form>
                         <p class="mt-3 text-center text-muted">
-                            <?= __t('auth.have_account', $translations) ?> <a href="login.php"><?= __t('nav.login', $translations) ?></a>
+                            <?= __t('auth.have_account', $translations) ?> <a href="<?= site_url('giris') ?>"><?= __t('nav.login', $translations) ?></a>
                         </p>
                     </div>
                 </div>

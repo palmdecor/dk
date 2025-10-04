@@ -1,5 +1,7 @@
 <?php
-require __DIR__ . '/includes/bootstrap.php';
+if (!defined('APP_ENTRY')) {
+    require __DIR__ . '/includes/bootstrap.php';
+}
 $meta = seo_meta_tags($translations, 'meta.contact.title', 'meta.contact.description');
 $errors = [];
 
@@ -21,7 +23,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             file_put_contents(__DIR__ . '/storage/logs/contact.log', $logMessage, FILE_APPEND);
         }
 
-        redirect_with_message('contact.php', 'success', __t('form.success', $translations));
+        redirect_with_message(site_url('iletisim'), 'success', __t('form.success', $translations));
     }
 }
 

@@ -3,7 +3,8 @@ if (!isset($translations, $config, $lang)) {
     throw new RuntimeException('Header requires translations and config.');
 }
 $meta = $meta ?? ['title' => $config['app']['name'], 'description' => $config['app']['name']];
-$currentUrl = rtrim($config['app']['base_url'], '/') . strtok($_SERVER['REQUEST_URI'], '?');
+$currentPath = strtok($_SERVER['REQUEST_URI'] ?? '/', '?') ?: '/';
+$currentUrl = rtrim($config['app']['base_url'], '/') . $currentPath;
 $navigationPages = $navigationPages ?? [];
 if (empty($navigationPages) && isset($pdo)) {
     try {
@@ -30,40 +31,48 @@ if (empty($navigationPages) && isset($pdo)) {
 <body>
 <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm sticky-top">
     <div class="container">
-        <a class="navbar-brand fw-bold text-primary" href="index.php">Finans Portal</a>
+        <a class="navbar-brand fw-bold text-primary" href="<?= site_url() ?>">Finans Portal</a>
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
             <span class="navbar-toggler-icon"></span>
         </button>
         <div class="collapse navbar-collapse" id="navbarNav">
             <ul class="navbar-nav ms-auto align-items-lg-center">
-                <li class="nav-item"><a class="nav-link" href="index.php"><?= __t('nav.home', $translations) ?></a></li>
-                <li class="nav-item"><a class="nav-link" href="apply.php"><?= __t('nav.apply', $translations) ?></a></li>
-                <li class="nav-item"><a class="nav-link" href="blog.php"><?= __t('nav.blog', $translations) ?></a></li>
-                <li class="nav-item"><a class="nav-link" href="products.php"><?= __t('nav.products', $translations) ?></a></li>
+                <li class="nav-item"><a class="nav-link" href="<?= site_url() ?>"><?= __t('nav.home', $translations) ?></a></li>
+                <li class="nav-item"><a class="nav-link" href="<?= site_url('basvuru') ?>"><?= __t('nav.apply', $translations) ?></a></li>
+                <li class="nav-item"><a class="nav-link" href="<?= site_url('blog') ?>"><?= __t('nav.blog', $translations) ?></a></li>
+                <li class="nav-item"><a class="nav-link" href="<?= site_url('urunler') ?>"><?= __t('nav.products', $translations) ?></a></li>
                 <?php foreach ($navigationPages as $page): ?>
-                    <li class="nav-item"><a class="nav-link" href="page.php?slug=<?= urlencode($page['slug']) ?>"><?= htmlspecialchars($page['title']) ?></a></li>
+                    <li class="nav-item"><a class="nav-link" href="<?= site_url('sayfa/' . $page['slug']) ?>"><?= htmlspecialchars($page['title']) ?></a></li>
                 <?php endforeach; ?>
                 <?php if (current_user()): ?>
-                    <li class="nav-item"><a class="nav-link" href="dashboard.php"><?= __t('nav.dashboard', $translations) ?></a></li>
+                    <li class="nav-item"><a class="nav-link" href="<?= site_url('dashboard') ?>"><?= __t('nav.dashboard', $translations) ?></a></li>
                 <?php endif; ?>
                 <?php if (current_user() && (current_user()['role'] ?? 'user') === 'admin'): ?>
-                    <li class="nav-item"><a class="nav-link" href="admin.php"><?= __t('nav.admin', $translations) ?></a></li>
+                    <li class="nav-item"><a class="nav-link" href="<?= site_url('admin') ?>"><?= __t('nav.admin', $translations) ?></a></li>
                 <?php endif; ?>
-                <li class="nav-item"><a class="nav-link" href="contact.php"><?= __t('nav.contact', $translations) ?></a></li>
+                <li class="nav-item"><a class="nav-link" href="<?= site_url('iletisim') ?>"><?= __t('nav.contact', $translations) ?></a></li>
                 <?php if (!current_user()): ?>
-                    <li class="nav-item"><a class="nav-link" href="login.php"><?= __t('nav.login', $translations) ?></a></li>
-                    <li class="nav-item"><a class="btn btn-primary ms-lg-2" href="register.php"><?= __t('nav.register', $translations) ?></a></li>
+                    <li class="nav-item"><a class="nav-link" href="<?= site_url('giris') ?>"><?= __t('nav.login', $translations) ?></a></li>
+                    <li class="nav-item"><a class="btn btn-primary ms-lg-2" href="<?= site_url('kayit') ?>"><?= __t('nav.register', $translations) ?></a></li>
                 <?php else: ?>
-                    <li class="nav-item"><a class="btn btn-outline-primary ms-lg-2" href="logout.php"><?= __t('nav.logout', $translations) ?></a></li>
+                    <li class="nav-item"><a class="btn btn-outline-primary ms-lg-2" href="<?= site_url('cikis') ?>"><?= __t('nav.logout', $translations) ?></a></li>
                 <?php endif; ?>
                 <li class="nav-item dropdown">
                     <a class="nav-link dropdown-toggle" href="#" id="langDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                         <?= strtoupper($lang) ?>
                     </a>
                     <ul class="dropdown-menu" aria-labelledby="langDropdown">
-                        <?php foreach ($config['app']['supported_langs'] as $supportedLang): ?>
-                            <?php $path = basename($_SERVER['PHP_SELF']); ?>
-                            <li><a class="dropdown-item" href="<?= $path ?>?lang=<?= $supportedLang ?>"><?= strtoupper($supportedLang) ?></a></li>
+                        <?php
+                        $requestUri = $_SERVER['REQUEST_URI'] ?? '/';
+                        $parsedUri = parse_url($requestUri);
+                        $basePath = $parsedUri['path'] ?? '/';
+                        parse_str($parsedUri['query'] ?? '', $queryParams);
+                        foreach ($config['app']['supported_langs'] as $supportedLang):
+                            $queryParams['lang'] = $supportedLang;
+                            $queryString = http_build_query($queryParams);
+                            $langHref = $basePath . ($queryString ? '?' . $queryString : '');
+                        ?>
+                            <li><a class="dropdown-item" href="<?= htmlspecialchars($langHref) ?>"><?= strtoupper($supportedLang) ?></a></li>
                         <?php endforeach; ?>
                     </ul>
                 </li>

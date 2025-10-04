@@ -1,15 +1,17 @@
 <?php
-require __DIR__ . '/includes/bootstrap.php';
+if (!defined('APP_ENTRY')) {
+    require __DIR__ . '/includes/bootstrap.php';
+}
 
 $meta = seo_meta_tags($translations, 'products.checkout.title', 'products.checkout.subtitle');
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-    redirect_with_message('products.php', 'danger', __t('form.error', $translations));
+    redirect_with_message(site_url('urunler'), 'danger', __t('form.error', $translations));
 }
 
 $productId = filter_var($_POST['product_id'] ?? null, FILTER_VALIDATE_INT);
 if (!$productId) {
-    redirect_with_message('products.php', 'danger', __t('form.error', $translations));
+    redirect_with_message(site_url('urunler'), 'danger', __t('form.error', $translations));
 }
 
 $stmt = $pdo->prepare("SELECT * FROM products WHERE id = :id AND status = 'published'");
@@ -17,23 +19,23 @@ $stmt->execute(['id' => $productId]);
 $product = $stmt->fetch();
 
 if (!$product) {
-    redirect_with_message('products.php', 'danger', __t('form.error', $translations));
+    redirect_with_message(site_url('urunler'), 'danger', __t('form.error', $translations));
 }
 
 if ((int) $product['stock'] <= 0) {
-    redirect_with_message('products.php', 'danger', __t('products.out_of_stock', $translations));
+    redirect_with_message(site_url('urunler'), 'danger', __t('products.out_of_stock', $translations));
 }
 
 if (isset($_POST['confirm'])) {
     $quantity = max(1, (int) ($_POST['quantity'] ?? 1));
     if ($quantity > (int) $product['stock']) {
-        redirect_with_message('products.php', 'danger', __t('products.out_of_stock', $translations));
+        redirect_with_message(site_url('urunler'), 'danger', __t('products.out_of_stock', $translations));
     }
     $provider = in_array($_POST['payment_provider'] ?? 'paytr', ['paytr', 'shopier'], true) ? $_POST['payment_provider'] : 'paytr';
     $customerName = trim($_POST['customer_name'] ?? '');
     $customerEmail = trim($_POST['customer_email'] ?? '');
     if ($customerEmail !== '' && !filter_var($customerEmail, FILTER_VALIDATE_EMAIL)) {
-        redirect_with_message('products.php', 'danger', __t('form.validation_error', $translations));
+        redirect_with_message(site_url('urun/' . $product['slug']), 'danger', __t('form.validation_error', $translations));
     }
     $total = $product['price'] * $quantity;
     $user = current_user();
@@ -87,11 +89,11 @@ if (isset($_POST['confirm'])) {
                             <p class="mb-1">Ödeme sağlayıcısına yönlendiriliyorsunuz. Ödeme başarıyla tamamlandığında sistemimize otomatik bildirim düşecektir.</p>
                             <p class="mb-0 small">Test için aşağıdaki bağlantıları kullanabilirsiniz:</p>
                             <ul class="small mb-0 mt-2">
-                                <li><a href="payment_callback.php?order_id=<?= $orderId ?>&status=success&provider=<?= urlencode($provider) ?>&reference=<?= urlencode($reference) ?>" class="text-decoration-none">Ödemeyi Başarılı Bildir</a></li>
-                                <li><a href="payment_callback.php?order_id=<?= $orderId ?>&status=failed&provider=<?= urlencode($provider) ?>&reference=<?= urlencode($reference) ?>" class="text-decoration-none">Ödemeyi Başarısız Bildir</a></li>
+                                <li><a href="<?= site_url('odeme/callback?order_id=' . $orderId . '&status=success&provider=' . urlencode($provider) . '&reference=' . urlencode($reference)) ?>" class="text-decoration-none">Ödemeyi Başarılı Bildir</a></li>
+                                <li><a href="<?= site_url('odeme/callback?order_id=' . $orderId . '&status=failed&provider=' . urlencode($provider) . '&reference=' . urlencode($reference)) ?>" class="text-decoration-none">Ödemeyi Başarısız Bildir</a></li>
                             </ul>
                         </div>
-                        <a href="products.php" class="btn btn-outline-primary mt-3">Ürünlere Geri Dön</a>
+                        <a href="<?= site_url('urunler') ?>" class="btn btn-outline-primary mt-3">Ürünlere Geri Dön</a>
                     </div>
                 </div>
             </div>

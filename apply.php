@@ -1,5 +1,7 @@
 <?php
-require __DIR__ . '/includes/bootstrap.php';
+if (!defined('APP_ENTRY')) {
+    require __DIR__ . '/includes/bootstrap.php';
+}
 require_login();
 $meta = seo_meta_tags($translations, 'meta.apply.title', 'meta.apply.description');
 $errors = [];
@@ -43,7 +45,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'address' => $address,
             'status' => 'pending',
         ]);
-        redirect_with_message('dashboard.php', 'success', __t('form.success', $translations));
+        redirect_with_message(site_url('dashboard'), 'success', __t('form.success', $translations));
     }
 }
 

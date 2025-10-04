@@ -1,5 +1,7 @@
 <?php
-require __DIR__ . '/includes/bootstrap.php';
+if (!defined('APP_ENTRY')) {
+    require __DIR__ . '/includes/bootstrap.php';
+}
 require_login();
 $meta = seo_meta_tags($translations, 'meta.dashboard.title', 'meta.dashboard.description');
 
@@ -15,7 +17,7 @@ include __DIR__ . '/partials/flash.php';
     <div class="container">
         <div class="d-flex justify-content-between align-items-center mb-4">
             <h2 class="fw-bold"><?= __t('dashboard.title', $translations) ?></h2>
-            <a href="apply.php" class="btn btn-primary"><?= __t('nav.apply', $translations) ?></a>
+            <a href="<?= site_url('basvuru') ?>" class="btn btn-primary"><?= __t('nav.apply', $translations) ?></a>
         </div>
         <?php if (empty($applications)): ?>
             <div class="alert alert-info" role="alert">

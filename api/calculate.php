@@ -1,5 +1,7 @@
 <?php
-require __DIR__ . '/../includes/bootstrap.php';
+if (!defined('APP_ENTRY')) {
+    require __DIR__ . '/../includes/bootstrap.php';
+}
 header('Content-Type: application/json');
 
 $amount = filter_var($_GET['amount'] ?? '', FILTER_VALIDATE_FLOAT);

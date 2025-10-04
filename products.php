@@ -1,5 +1,7 @@
 <?php
-require __DIR__ . '/includes/bootstrap.php';
+if (!defined('APP_ENTRY')) {
+    require __DIR__ . '/includes/bootstrap.php';
+}
 
 $meta = seo_meta_tags($translations, 'meta.products.title', 'meta.products.description');
 $products = published_products($pdo);
@@ -22,7 +24,7 @@ include __DIR__ . '/partials/header.php';
                             <p class="text-muted flex-grow-1"><?= nl2br(htmlspecialchars(mb_substr($product['description'], 0, 180))) ?><?= mb_strlen($product['description']) > 180 ? '...' : '' ?></p>
                             <?php if ($product['stock'] > 0): ?>
                                 <p class="small text-success mb-3"><?= sprintf(__t('products.stock', $translations), (int) $product['stock']) ?></p>
-                                <form method="post" action="purchase.php" class="mt-auto">
+                                <form method="post" action="<?= site_url('urun/' . $product['slug']) ?>" class="mt-auto">
                                     <input type="hidden" name="product_id" value="<?= (int) $product['id'] ?>">
                                     <button type="submit" class="btn btn-primary w-100"><?= __t('products.buy', $translations) ?></button>
                                 </form>

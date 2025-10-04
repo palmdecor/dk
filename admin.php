@@ -26,7 +26,7 @@ function handle_admin_post(PDO $pdo, array $translations): void
             if ($applicationId && isset($allowed[$status])) {
                 $stmt = $pdo->prepare('UPDATE applications SET status = :status, updated_at = NOW() WHERE id = :id');
                 $stmt->execute(['status' => $allowed[$status], 'id' => $applicationId]);
-                redirect_with_message('admin.php?view=applications', 'success', __t('form.success', $translations));
+                redirect_with_message(site_url('admin?view=applications'), 'success', __t('form.success', $translations));
             }
             break;
 
@@ -40,7 +40,7 @@ function handle_admin_post(PDO $pdo, array $translations): void
             $metaTitle = trim($_POST['meta_title'] ?? '');
             $metaDescription = trim($_POST['meta_description'] ?? '');
             if ($title === '' || $content === '') {
-                redirect_with_message('admin.php?view=pages' . ($id ? '&edit=' . $id : ''), 'danger', __t('form.validation_error', $translations));
+                redirect_with_message(site_url('admin?view=pages' . ($id ? '&edit=' . $id : '')), 'danger', __t('form.validation_error', $translations));
             }
             $slugBase = $slugInput !== '' ? slugify($slugInput) : slugify($title);
             $slug = ensure_unique_slug($pdo, 'pages', $slugBase, $id ?: null);
@@ -56,7 +56,7 @@ function handle_admin_post(PDO $pdo, array $translations): void
                 ]);
             } else {
                 if (!$id) {
-                    redirect_with_message('admin.php?view=pages', 'danger', __t('form.error', $translations));
+                    redirect_with_message(site_url('admin?view=pages'), 'danger', __t('form.error', $translations));
                 }
                 $stmt = $pdo->prepare('UPDATE pages SET title = :title, slug = :slug, content = :content, status = :status, meta_title = :meta_title, meta_description = :meta_description, updated_at = NOW() WHERE id = :id');
                 $stmt->execute([
@@ -69,7 +69,7 @@ function handle_admin_post(PDO $pdo, array $translations): void
                     'id' => $id,
                 ]);
             }
-            redirect_with_message('admin.php?view=pages', 'success', __t('pages.updated', $translations));
+            redirect_with_message(site_url('admin?view=pages'), 'success', __t('pages.updated', $translations));
             break;
 
         case 'page:delete':
@@ -78,7 +78,7 @@ function handle_admin_post(PDO $pdo, array $translations): void
                 $stmt = $pdo->prepare('DELETE FROM pages WHERE id = :id');
                 $stmt->execute(['id' => $id]);
             }
-            redirect_with_message('admin.php?view=pages', 'success', __t('pages.updated', $translations));
+            redirect_with_message(site_url('admin?view=pages'), 'success', __t('pages.updated', $translations));
             break;
 
         case 'post:create':
@@ -92,7 +92,7 @@ function handle_admin_post(PDO $pdo, array $translations): void
             $metaTitle = trim($_POST['meta_title'] ?? '');
             $metaDescription = trim($_POST['meta_description'] ?? '');
             if ($title === '' || $body === '') {
-                redirect_with_message('admin.php?view=posts' . ($id ? '&edit=' . $id : ''), 'danger', __t('form.validation_error', $translations));
+                redirect_with_message(site_url('admin?view=posts' . ($id ? '&edit=' . $id : '')), 'danger', __t('form.validation_error', $translations));
             }
             $slugBase = $slugInput !== '' ? slugify($slugInput) : slugify($title);
             $slug = ensure_unique_slug($pdo, 'posts', $slugBase, $id ?: null);
@@ -100,7 +100,7 @@ function handle_admin_post(PDO $pdo, array $translations): void
             $imagePath = null;
             if ($action === 'post:update') {
                 if (!$id) {
-                    redirect_with_message('admin.php?view=posts', 'danger', __t('form.error', $translations));
+                    redirect_with_message(site_url('admin?view=posts'), 'danger', __t('form.error', $translations));
                 }
                 $stmt = $pdo->prepare('SELECT image_path FROM posts WHERE id = :id');
                 $stmt->execute(['id' => $id]);
@@ -112,16 +112,16 @@ function handle_admin_post(PDO $pdo, array $translations): void
                 $allowedExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
                 $extension = strtolower(pathinfo($_FILES['image']['name'], PATHINFO_EXTENSION));
                 if (!in_array($extension, $allowedExtensions, true)) {
-                    redirect_with_message('admin.php?view=posts' . ($id ? '&edit=' . $id : ''), 'danger', __t('admin.post.image_invalid', $translations));
+                    redirect_with_message(site_url('admin?view=posts' . ($id ? '&edit=' . $id : '')), 'danger', __t('admin.post.image_invalid', $translations));
                 }
                 $uploadDir = __DIR__ . '/storage/uploads';
                 if (!is_dir($uploadDir) && !mkdir($uploadDir, 0775, true) && !is_dir($uploadDir)) {
-                    redirect_with_message('admin.php?view=posts' . ($id ? '&edit=' . $id : ''), 'danger', __t('admin.post.image_failed', $translations));
+                    redirect_with_message(site_url('admin?view=posts' . ($id ? '&edit=' . $id : '')), 'danger', __t('admin.post.image_failed', $translations));
                 }
                 $fileName = uniqid('post_', true) . '.' . $extension;
                 $destination = $uploadDir . '/' . $fileName;
                 if (!move_uploaded_file($_FILES['image']['tmp_name'], $destination)) {
-                    redirect_with_message('admin.php?view=posts' . ($id ? '&edit=' . $id : ''), 'danger', __t('admin.post.image_failed', $translations));
+                    redirect_with_message(site_url('admin?view=posts' . ($id ? '&edit=' . $id : '')), 'danger', __t('admin.post.image_failed', $translations));
                 }
                 $imagePath = 'storage/uploads/' . $fileName;
             }
@@ -141,7 +141,7 @@ function handle_admin_post(PDO $pdo, array $translations): void
                 ]);
             } else {
                 if (!$id) {
-                    redirect_with_message('admin.php?view=posts', 'danger', __t('form.error', $translations));
+                redirect_with_message(site_url('admin?view=posts'), 'danger', __t('form.error', $translations));
                 }
                 $stmt = $pdo->prepare('UPDATE posts SET title = :title, slug = :slug, excerpt = :excerpt, body = :body, status = :status, published_at = :published_at, image_path = :image_path, meta_title = :meta_title, meta_description = :meta_description, updated_at = NOW() WHERE id = :id');
                 $stmt->execute([
@@ -157,7 +157,7 @@ function handle_admin_post(PDO $pdo, array $translations): void
                     'id' => $id,
                 ]);
             }
-            redirect_with_message('admin.php?view=posts', 'success', __t('posts.updated', $translations));
+            redirect_with_message(site_url('admin?view=posts'), 'success', __t('posts.updated', $translations));
             break;
 
         case 'post:delete':
@@ -166,7 +166,7 @@ function handle_admin_post(PDO $pdo, array $translations): void
                 $stmt = $pdo->prepare('DELETE FROM posts WHERE id = :id');
                 $stmt->execute(['id' => $id]);
             }
-            redirect_with_message('admin.php?view=posts', 'success', __t('posts.updated', $translations));
+            redirect_with_message(site_url('admin?view=posts'), 'success', __t('posts.updated', $translations));
             break;
 
         case 'comment:status':
@@ -176,7 +176,7 @@ function handle_admin_post(PDO $pdo, array $translations): void
                 $stmt = $pdo->prepare('UPDATE comments SET status = :status WHERE id = :id');
                 $stmt->execute(['status' => $status, 'id' => $id]);
             }
-            redirect_with_message('admin.php?view=comments', 'success', __t('comments.updated', $translations));
+            redirect_with_message(site_url('admin?view=comments'), 'success', __t('comments.updated', $translations));
             break;
 
         case 'comment:delete':
@@ -185,7 +185,7 @@ function handle_admin_post(PDO $pdo, array $translations): void
                 $stmt = $pdo->prepare('DELETE FROM comments WHERE id = :id');
                 $stmt->execute(['id' => $id]);
             }
-            redirect_with_message('admin.php?view=comments', 'success', __t('comments.updated', $translations));
+            redirect_with_message(site_url('admin?view=comments'), 'success', __t('comments.updated', $translations));
             break;
 
         case 'settings:update':
@@ -197,6 +197,12 @@ function handle_admin_post(PDO $pdo, array $translations): void
             $interestRate = filter_var($interestInput, FILTER_VALIDATE_FLOAT);
             if ($interestRate !== false && $interestRate >= 0) {
                 set_setting($pdo, 'interest_rate', number_format($interestRate, 6, '.', ''));
+            }
+
+            $feeInput = str_replace(',', '.', $_POST['disbursement_fee_rate'] ?? '');
+            $feeRate = filter_var($feeInput, FILTER_VALIDATE_FLOAT);
+            if ($feeRate !== false && $feeRate >= 0) {
+                set_setting($pdo, 'disbursement_fee_rate', number_format($feeRate, 6, '.', ''));
             }
 
             $homepagePayload = [];
@@ -231,7 +237,15 @@ function handle_admin_post(PDO $pdo, array $translations): void
 
             save_homepage_content($pdo, $homepagePayload);
 
-            redirect_with_message('admin.php?view=settings', 'success', __t('admin.settings.saved', $translations));
+            $termsContent = sanitize_policy_html($_POST['terms_content'] ?? '');
+            $kvkkContent = sanitize_policy_html($_POST['kvkk_content'] ?? '');
+            save_policy_content($pdo, 'terms_content', $termsContent);
+            save_policy_content($pdo, 'kvkk_content', $kvkkContent);
+
+            $aiTopics = trim($_POST['ai_blog_topics'] ?? '');
+            set_setting($pdo, 'ai_blog_topics', $aiTopics);
+
+            redirect_with_message(site_url('admin?view=settings'), 'success', __t('admin.settings.saved', $translations));
             break;
 
         case 'product:create':
@@ -244,7 +258,7 @@ function handle_admin_post(PDO $pdo, array $translations): void
             $stock = (int) ($_POST['stock'] ?? 0);
             $status = in_array($_POST['status'] ?? 'draft', ['draft', 'published'], true) ? $_POST['status'] : 'draft';
             if ($name === '' || $price <= 0) {
-                redirect_with_message('admin.php?view=products' . ($id ? '&edit=' . $id : ''), 'danger', __t('form.validation_error', $translations));
+                redirect_with_message(site_url('admin?view=products' . ($id ? '&edit=' . $id : '')), 'danger', __t('form.validation_error', $translations));
             }
             $slugBase = $slugInput !== '' ? slugify($slugInput) : slugify($name);
             $slug = ensure_unique_slug($pdo, 'products', $slugBase, $id ?: null);
@@ -253,12 +267,12 @@ function handle_admin_post(PDO $pdo, array $translations): void
                 $stmt->execute(['name' => $name, 'slug' => $slug, 'description' => $description, 'price' => $price, 'stock' => $stock, 'status' => $status]);
             } else {
                 if (!$id) {
-                    redirect_with_message('admin.php?view=products', 'danger', __t('form.error', $translations));
+                    redirect_with_message(site_url('admin?view=products'), 'danger', __t('form.error', $translations));
                 }
                 $stmt = $pdo->prepare('UPDATE products SET name = :name, slug = :slug, description = :description, price = :price, stock = :stock, status = :status, updated_at = NOW() WHERE id = :id');
                 $stmt->execute(['name' => $name, 'slug' => $slug, 'description' => $description, 'price' => $price, 'stock' => $stock, 'status' => $status, 'id' => $id]);
             }
-            redirect_with_message('admin.php?view=products', 'success', __t('products.updated', $translations));
+            redirect_with_message(site_url('admin?view=products'), 'success', __t('products.updated', $translations));
             break;
 
         case 'product:delete':
@@ -267,7 +281,7 @@ function handle_admin_post(PDO $pdo, array $translations): void
                 $stmt = $pdo->prepare('DELETE FROM products WHERE id = :id');
                 $stmt->execute(['id' => $id]);
             }
-            redirect_with_message('admin.php?view=products', 'success', __t('products.updated', $translations));
+            redirect_with_message(site_url('admin?view=products'), 'success', __t('products.updated', $translations));
             break;
 
         case 'order:update':
@@ -284,11 +298,11 @@ function handle_admin_post(PDO $pdo, array $translations): void
                     'payload' => json_encode(['status' => $status, 'reference' => $reference]),
                 ]);
             }
-            redirect_with_message('admin.php?view=orders', 'success', __t('orders.updated', $translations));
+            redirect_with_message(site_url('admin?view=orders'), 'success', __t('orders.updated', $translations));
             break;
     }
 
-    redirect_with_message('admin.php', 'danger', __t('form.error', $translations));
+    redirect_with_message(site_url('admin'), 'danger', __t('form.error', $translations));
 }
 
 handle_admin_post($pdo, $translations);
@@ -336,6 +350,10 @@ $orderEvents = [];
 $reportData = [];
 $homepageContent = get_homepage_content($pdo, $translations);
 $currentInterestRate = get_interest_rate($pdo, (float) $config['app']['interest_rate']);
+$currentFeeRate = get_disbursement_rate($pdo);
+$termsSetting = get_policy_content($pdo, 'terms_content', default_terms_content());
+$kvkkSetting = get_policy_content($pdo, 'kvkk_content', default_kvkk_content());
+$aiBlogTopics = get_setting($pdo, 'ai_blog_topics', 'kredi notu, finansal planlama, faiz oranları');
 
 if ($view === 'applications') {
     $stmt = $pdo->query('SELECT applications.*, users.name, users.email FROM applications JOIN users ON users.id = applications.user_id ORDER BY applications.created_at DESC');
@@ -387,18 +405,18 @@ include __DIR__ . '/partials/flash.php';
                 <p class="text-muted mb-0"><?= __t('admin.subtitle', $translations) ?></p>
             </div>
             <div class="mt-3 mt-lg-0">
-                <a href="index.php" class="btn btn-outline-secondary"><i class="bi bi-arrow-left"></i> <?= __t('nav.home', $translations) ?></a>
+                <a href="<?= site_url() ?>" class="btn btn-outline-secondary"><i class="bi bi-arrow-left"></i> <?= __t('nav.home', $translations) ?></a>
             </div>
         </div>
         <ul class="nav nav-pills mb-4 flex-wrap gap-2">
-            <li class="nav-item"><a class="nav-link <?= $view === 'applications' ? 'active' : '' ?>" href="admin.php?view=applications"><?= __t('admin.tab.applications', $translations) ?></a></li>
-            <li class="nav-item"><a class="nav-link <?= $view === 'pages' ? 'active' : '' ?>" href="admin.php?view=pages"><?= __t('admin.tab.pages', $translations) ?></a></li>
-            <li class="nav-item"><a class="nav-link <?= $view === 'posts' ? 'active' : '' ?>" href="admin.php?view=posts"><?= __t('admin.tab.posts', $translations) ?></a></li>
-            <li class="nav-item"><a class="nav-link <?= $view === 'comments' ? 'active' : '' ?>" href="admin.php?view=comments"><?= __t('admin.tab.comments', $translations) ?></a></li>
-            <li class="nav-item"><a class="nav-link <?= $view === 'products' ? 'active' : '' ?>" href="admin.php?view=products"><?= __t('admin.tab.products', $translations) ?></a></li>
-            <li class="nav-item"><a class="nav-link <?= $view === 'orders' ? 'active' : '' ?>" href="admin.php?view=orders"><?= __t('admin.tab.orders', $translations) ?></a></li>
-            <li class="nav-item"><a class="nav-link <?= $view === 'reports' ? 'active' : '' ?>" href="admin.php?view=reports"><?= __t('admin.tab.reports', $translations) ?></a></li>
-            <li class="nav-item"><a class="nav-link <?= $view === 'settings' ? 'active' : '' ?>" href="admin.php?view=settings"><?= __t('admin.tab.settings', $translations) ?></a></li>
+            <li class="nav-item"><a class="nav-link <?= $view === 'applications' ? 'active' : '' ?>" href="<?= site_url('admin?view=applications') ?>"><?= __t('admin.tab.applications', $translations) ?></a></li>
+            <li class="nav-item"><a class="nav-link <?= $view === 'pages' ? 'active' : '' ?>" href="<?= site_url('admin?view=pages') ?>"><?= __t('admin.tab.pages', $translations) ?></a></li>
+            <li class="nav-item"><a class="nav-link <?= $view === 'posts' ? 'active' : '' ?>" href="<?= site_url('admin?view=posts') ?>"><?= __t('admin.tab.posts', $translations) ?></a></li>
+            <li class="nav-item"><a class="nav-link <?= $view === 'comments' ? 'active' : '' ?>" href="<?= site_url('admin?view=comments') ?>"><?= __t('admin.tab.comments', $translations) ?></a></li>
+            <li class="nav-item"><a class="nav-link <?= $view === 'products' ? 'active' : '' ?>" href="<?= site_url('admin?view=products') ?>"><?= __t('admin.tab.products', $translations) ?></a></li>
+            <li class="nav-item"><a class="nav-link <?= $view === 'orders' ? 'active' : '' ?>" href="<?= site_url('admin?view=orders') ?>"><?= __t('admin.tab.orders', $translations) ?></a></li>
+            <li class="nav-item"><a class="nav-link <?= $view === 'reports' ? 'active' : '' ?>" href="<?= site_url('admin?view=reports') ?>"><?= __t('admin.tab.reports', $translations) ?></a></li>
+            <li class="nav-item"><a class="nav-link <?= $view === 'settings' ? 'active' : '' ?>" href="<?= site_url('admin?view=settings') ?>"><?= __t('admin.tab.settings', $translations) ?></a></li>
         </ul>
 
         <?php if ($view === 'applications'): ?>
@@ -482,7 +500,7 @@ include __DIR__ . '/partials/flash.php';
                                 </div>
                                 <div class="d-flex gap-2">
                                     <button type="submit" class="btn btn-primary"><?= __t('admin.save', $translations) ?></button>
-                                    <?php if ($pageToEdit): ?><a href="admin.php?view=pages" class="btn btn-outline-secondary"><?= __t('admin.reset', $translations) ?></a><?php endif; ?>
+                                    <?php if ($pageToEdit): ?><a href="<?= site_url('admin?view=pages') ?>" class="btn btn-outline-secondary"><?= __t('admin.reset', $translations) ?></a><?php endif; ?>
                                 </div>
                             </form>
                         </div>
@@ -511,7 +529,7 @@ include __DIR__ . '/partials/flash.php';
                                                 <td><span class="badge bg-<?= $page['status'] === 'published' ? 'success' : 'secondary' ?>"><?= __t('status.' . $page['status'], $translations) ?></span></td>
                                                 <td><?= date('d.m.Y H:i', strtotime($page['created_at'])) ?></td>
                                                 <td class="d-flex gap-2">
-                                                    <a href="admin.php?view=pages&edit=<?= (int) $page['id'] ?>" class="btn btn-sm btn-outline-primary"><i class="bi bi-pencil"></i></a>
+                                                    <a href="<?= site_url('admin?view=pages&edit=' . (int) $page['id']) ?>" class="btn btn-sm btn-outline-primary"><i class="bi bi-pencil"></i></a>
                                                     <form method="post" onsubmit="return confirm('<?= __t('form.delete_confirm', $translations) ?>');">
                                                         <input type="hidden" name="action" value="page:delete">
                                                         <input type="hidden" name="id" value="<?= (int) $page['id'] ?>">
@@ -583,7 +601,7 @@ include __DIR__ . '/partials/flash.php';
                                 </div>
                                 <div class="d-flex gap-2">
                                     <button type="submit" class="btn btn-primary"><?= __t('admin.save', $translations) ?></button>
-                                    <?php if ($postToEdit): ?><a href="admin.php?view=posts" class="btn btn-outline-secondary"><?= __t('admin.reset', $translations) ?></a><?php endif; ?>
+                                    <?php if ($postToEdit): ?><a href="<?= site_url('admin?view=posts') ?>" class="btn btn-outline-secondary"><?= __t('admin.reset', $translations) ?></a><?php endif; ?>
                                 </div>
                             </form>
                         </div>
@@ -612,7 +630,7 @@ include __DIR__ . '/partials/flash.php';
                                                 <td><span class="badge bg-<?= $post['status'] === 'published' ? 'success' : 'secondary' ?>"><?= __t('status.' . $post['status'], $translations) ?></span></td>
                                                 <td><?= date('d.m.Y H:i', strtotime($post['created_at'])) ?></td>
                                                 <td class="d-flex gap-2">
-                                                    <a href="admin.php?view=posts&edit=<?= (int) $post['id'] ?>" class="btn btn-sm btn-outline-primary"><i class="bi bi-pencil"></i></a>
+                                                    <a href="<?= site_url('admin?view=posts&edit=' . (int) $post['id']) ?>" class="btn btn-sm btn-outline-primary"><i class="bi bi-pencil"></i></a>
                                                     <form method="post" onsubmit="return confirm('<?= __t('form.delete_confirm', $translations) ?>');">
                                                         <input type="hidden" name="action" value="post:delete">
                                                         <input type="hidden" name="id" value="<?= (int) $post['id'] ?>">
@@ -721,7 +739,7 @@ include __DIR__ . '/partials/flash.php';
                                 </div>
                                 <div class="d-flex gap-2">
                                     <button type="submit" class="btn btn-primary"><?= __t('admin.save', $translations) ?></button>
-                                    <?php if ($productToEdit): ?><a href="admin.php?view=products" class="btn btn-outline-secondary"><?= __t('admin.reset', $translations) ?></a><?php endif; ?>
+                                    <?php if ($productToEdit): ?><a href="<?= site_url('admin?view=products') ?>" class="btn btn-outline-secondary"><?= __t('admin.reset', $translations) ?></a><?php endif; ?>
                                 </div>
                             </form>
                         </div>
@@ -752,7 +770,7 @@ include __DIR__ . '/partials/flash.php';
                                                 <td><?= (int) $product['stock'] ?></td>
                                                 <td><span class="badge bg-<?= $product['status'] === 'published' ? 'success' : 'secondary' ?>"><?= __t('status.' . $product['status'], $translations) ?></span></td>
                                                 <td class="d-flex gap-2">
-                                                    <a href="admin.php?view=products&edit=<?= (int) $product['id'] ?>" class="btn btn-sm btn-outline-primary"><i class="bi bi-pencil"></i></a>
+                                                    <a href="<?= site_url('admin?view=products&edit=' . (int) $product['id']) ?>" class="btn btn-sm btn-outline-primary"><i class="bi bi-pencil"></i></a>
                                                     <form method="post" onsubmit="return confirm('<?= __t('form.delete_confirm', $translations) ?>');">
                                                         <input type="hidden" name="action" value="product:delete">
                                                         <input type="hidden" name="id" value="<?= (int) $product['id'] ?>">
@@ -931,7 +949,10 @@ include __DIR__ . '/partials/flash.php';
                 });
             </script>
         <?php elseif ($view === 'settings'): ?>
-            <?php $interestValue = rtrim(rtrim(number_format((float) $currentInterestRate, 6, '.', ''), '0'), '.'); ?>
+            <?php
+            $interestValue = rtrim(rtrim(number_format((float) $currentInterestRate, 6, '.', ''), '0'), '.');
+            $feeValue = rtrim(rtrim(number_format((float) $currentFeeRate, 6, '.', ''), '0'), '.');
+            ?>
             <div class="card shadow-sm border-0">
                 <div class="card-body">
                     <h5 class="card-title mb-2"><?= __t('admin.settings.heading', $translations) ?></h5>
@@ -945,6 +966,14 @@ include __DIR__ . '/partials/flash.php';
                                 <span class="input-group-text">%</span>
                             </div>
                             <div class="form-text"><?= __t('admin.settings.interest_help', $translations) ?></div>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label"><?= __t('admin.settings.disbursement_fee', $translations) ?></label>
+                            <div class="input-group">
+                                <input type="number" step="0.000001" min="0" name="disbursement_fee_rate" class="form-control" value="<?= htmlspecialchars($feeValue !== '' ? $feeValue : '0') ?>">
+                                <span class="input-group-text">%</span>
+                            </div>
+                            <div class="form-text"><?= __t('admin.settings.disbursement_help', $translations) ?></div>
                         </div>
                         <div class="col-md-4">
                             <label class="form-label"><?= __t('admin.meta.title', $translations) ?></label>
@@ -998,6 +1027,24 @@ include __DIR__ . '/partials/flash.php';
                                 </div>
                             </div>
                         <?php endforeach; ?>
+                        <div class="col-12">
+                            <h6 class="text-uppercase text-muted small mb-3"><?= __t('admin.settings.policies', $translations) ?></h6>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label"><?= __t('admin.settings.terms_label', $translations) ?></label>
+                            <textarea name="terms_content" class="form-control" rows="6"><?= htmlspecialchars($termsSetting) ?></textarea>
+                            <div class="form-text"><?= __t('admin.settings.terms_help', $translations) ?></div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label"><?= __t('admin.settings.kvkk_label', $translations) ?></label>
+                            <textarea name="kvkk_content" class="form-control" rows="6"><?= htmlspecialchars($kvkkSetting) ?></textarea>
+                            <div class="form-text"><?= __t('admin.settings.kvkk_help', $translations) ?></div>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label"><?= __t('admin.settings.ai_blog_topics', $translations) ?></label>
+                            <textarea name="ai_blog_topics" class="form-control" rows="3" placeholder="kredi notu, finansal planlama, faiz oranları"><?= htmlspecialchars($aiBlogTopics) ?></textarea>
+                            <div class="form-text"><?= __t('admin.settings.ai_blog_help', $translations) ?></div>
+                        </div>
                         <div class="col-12 text-end">
                             <button type="submit" class="btn btn-primary"><?= __t('admin.save', $translations) ?></button>
                         </div>

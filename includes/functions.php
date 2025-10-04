@@ -54,6 +54,23 @@ function sanitize(string $value): string
     return htmlspecialchars(trim($value), ENT_QUOTES, 'UTF-8');
 }
 
+function site_url(string $path = ''): string
+{
+    $base = $GLOBALS['config']['app']['base_url'] ?? '/';
+    $base = rtrim($base, '/');
+    $path = ltrim($path, '/');
+
+    if ($path === '') {
+        return $base === '' ? '/' : ($base ?: '/');
+    }
+
+    if ($base === '' || $base === '/') {
+        return '/' . $path;
+    }
+
+    return $base . '/' . $path;
+}
+
 function calculate_monthly_payment(float $principal, int $months, float $monthlyRate): float
 {
     if ($months <= 0) {
@@ -143,6 +160,64 @@ function get_homepage_content(PDO $pdo, array $translations): array
 function save_homepage_content(PDO $pdo, array $content): void
 {
     set_setting($pdo, 'homepage_content', json_encode($content, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
+}
+
+function get_disbursement_rate(PDO $pdo): float
+{
+    $stored = get_setting($pdo, 'disbursement_fee_rate');
+    if ($stored !== null && $stored !== '' && is_numeric($stored)) {
+        $rate = (float) $stored;
+        return $rate < 0 ? 0.0 : $rate;
+    }
+
+    return 0.005; // %0.5 varsayılan tahsis ücreti
+}
+
+function sanitize_policy_html(string $value): string
+{
+    $allowed = '<p><ul><ol><li><strong><em><br><a><h2><h3><h4><blockquote>';
+    return trim(strip_tags($value, $allowed));
+}
+
+function default_terms_content(): string
+{
+    return '<p class="text-muted">Finans Portal hizmetlerini kullanarak aşağıdaki şartları kabul etmiş sayılırsınız.</p>'
+        . '<h4 class="mt-4">1. Hizmetin Kapsamı</h4>'
+        . '<p>Finans Portal, kullanıcıların kredi ürünleri hakkında bilgi edinmesini ve başvuru taleplerini iletmesini sağlayan dijital bir platformdur.</p>'
+        . '<h4 class="mt-4">2. Üyelik ve Güvenlik</h4>'
+        . '<p>Kullanıcılar kayıt olurken sundukları bilgilerin doğruluğundan sorumludur. Hesap güvenliği için güçlü bir şifre oluşturulmalı ve üçüncü kişilerle paylaşılmamalıdır.</p>'
+        . '<h4 class="mt-4">3. Veri Kullanımı</h4>'
+        . '<p>Paylaşılan bilgiler, başvuru değerlendirmesi ve kullanıcı deneyimini geliştirmek amacıyla işlenir. Detaylı bilgi için KVKK aydınlatma metnimizi inceleyiniz.</p>'
+        . '<h4 class="mt-4">4. Değişiklikler</h4>'
+        . '<p>Şartlar herhangi bir zamanda güncellenebilir. Güncel metin her zaman bu sayfa üzerinden yayınlanır.</p>';
+}
+
+function default_kvkk_content(): string
+{
+    return '<p class="text-muted">Kişisel verilerinizin korunması bizim için önceliklidir. Bu metin, 6698 sayılı Kişisel Verilerin Korunması Kanunu kapsamında bilgilendirme amacı taşımaktadır.</p>'
+        . '<h4 class="mt-4">1. Veri Sorumlusu</h4>'
+        . '<p>Finans Portal, veri sorumlusu sıfatıyla kullanıcı verilerini işler ve korur.</p>'
+        . '<h4 class="mt-4">2. İşlenen Kişisel Veriler</h4>'
+        . '<p>Kimlik, iletişim, finansal ve başvuruya ilişkin veriler işlenebilir.</p>'
+        . '<h4 class="mt-4">3. İşleme Amaçları</h4>'
+        . '<p>Başvuruların değerlendirilmesi, kullanıcı desteği sağlanması ve yasal yükümlülüklerin yerine getirilmesi.</p>'
+        . '<h4 class="mt-4">4. Haklarınız</h4>'
+        . '<p>Verilerinize erişme, düzeltme, silme ve itiraz etme gibi haklara sahipsiniz. Talepleriniz için iletişim kanallarımızdan bize ulaşabilirsiniz.</p>';
+}
+
+function get_policy_content(PDO $pdo, string $key, string $default = ''): string
+{
+    $stored = get_setting($pdo, $key, $default);
+    if ($stored === null || $stored === '') {
+        return $default;
+    }
+
+    return (string) $stored;
+}
+
+function save_policy_content(PDO $pdo, string $key, string $content): void
+{
+    set_setting($pdo, $key, $content);
 }
 
 function seo_meta_tags(array $translations, string $titleKey, string $descriptionKey): array
