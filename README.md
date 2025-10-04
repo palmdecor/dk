@@ -1,6 +1,6 @@
 # Finans Portal
 
-Finans Portal, interaktifkredi.com.tr benzeri sade PHP (Laravel olmadan) ile geliştirilmiş, kredi hesaplama ve başvuru süreçlerini yöneten bir web uygulamasıdır. Uygulama, Bootstrap tabanlı modern bir arayüz, çoklu dil desteği, üyelik sistemi ve mini CRM özellikli bir admin paneli sunar.
+Finans Portal, benzeri sade PHP (Laravel olmadan) ile geliştirilmiş, kredi hesaplama ve başvuru süreçlerini yöneten bir web uygulamasıdır. Uygulama, Bootstrap tabanlı modern bir arayüz, çoklu dil desteği, üyelik sistemi ve mini CRM özellikli bir admin paneli sunar.
 
 ## Özellikler
 - 💳 **Kredi Hesaplama** – Basit faiz yöntemine göre aylık ödeme tahmini ve ayrıntılı ödeme tablosu.
