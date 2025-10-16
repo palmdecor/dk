@@ -1,0 +1,123 @@
+body {
+    font-family: 'Inter', sans-serif;
+    background-color: #f5f7fb;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
+
+.hero-section {
+    background: linear-gradient(135deg, #0d6efd 0%, #3f8cff 100%);
+    color: #fff;
+    padding: 5rem 0;
+    position: relative;
+    overflow: hidden;
+}
+
+.hero-section::after {
+    content: '';
+    position: absolute;
+    top: -50px;
+    right: -100px;
+    width: 300px;
+    height: 300px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 50%;
+    filter: blur(0px);
+}
+
+.calculator-card {
+    border-radius: 1.5rem;
+    box-shadow: 0 1.5rem 3rem rgba(13, 110, 253, 0.15);
+}
+
+.advantage-card {
+    border-radius: 1rem;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.advantage-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 1rem 2rem rgba(13, 110, 253, 0.15);
+}
+
+.testimonial-card {
+    border-left: 4px solid #0d6efd;
+    background: #fff;
+    border-radius: 0.75rem;
+    padding: 1.5rem;
+    box-shadow: 0 1rem 2rem rgba(15, 23, 42, 0.05);
+}
+
+.form-control:focus, .form-select:focus {
+    border-color: #0d6efd;
+    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+}
+
+.flash-message {
+    border-radius: 0.75rem;
+}
+
+.table thead {
+    background-color: #0d6efd;
+    color: #fff;
+}
+
+.badge-status {
+    border-radius: 50rem;
+    padding: 0.35rem 0.75rem;
+}
+
+.badge-status.pending { background-color: #ffc107; color: #212529; }
+.badge-status.approved { background-color: #198754; }
+.badge-status.rejected { background-color: #dc3545; }
+
+.cms-content h1,
+.cms-content h2,
+.cms-content h3,
+.cms-content h4 {
+    margin-top: 1.5rem;
+    margin-bottom: 0.75rem;
+    font-weight: 600;
+}
+
+.cms-content p {
+    line-height: 1.7;
+    margin-bottom: 1rem;
+    color: #495057;
+}
+
+.cms-content ul,
+.cms-content ol {
+    padding-left: 1.25rem;
+    margin-bottom: 1rem;
+}
+
+.cms-content img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 0.5rem;
+}
+
+.cms-content blockquote {
+    padding: 1rem 1.5rem;
+    background: #f8f9fa;
+    border-left: 4px solid #0d6efd;
+    border-radius: 0.75rem;
+    font-style: italic;
+}
+
+.calculator-table th {
+    width: 60%;
+    font-weight: 600;
+    color: #0d6efd;
+}
+
+.calculator-table td {
+    text-align: right;
+    font-weight: 500;
+}
+
+.footer {
+    margin-top: auto;
+}
