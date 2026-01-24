@@ -8,6 +8,7 @@ use App\Core\Auth;
 use App\Core\Csrf;
 use App\Core\DB;
 use App\Core\Response;
+use App\Core\Session;
 use App\Core\View;
 use PDO;
 
@@ -18,7 +19,8 @@ final class AuthController
         private Auth $auth,
         private Csrf $csrf,
         private Response $response,
-        private View $view
+        private View $view,
+        private Session $session
     ) {
     }
 
@@ -29,7 +31,7 @@ final class AuthController
         }
         $this->view->render('auth/login', [
             'csrf' => $this->csrf,
-            'error' => null,
+            'error' => $this->session->flash('error'),
         ]);
     }
 
@@ -41,18 +43,17 @@ final class AuthController
         $stmt = $this->db->pdo()->prepare('SELECT * FROM users WHERE email = ? LIMIT 1');
         $stmt->execute([$email]);
         $user = $stmt->fetch(PDO::FETCH_ASSOC);
-        if ($user && password_verify($password, $user['password_hash'])) {
+        if ($user && $user['status'] === 'active' && password_verify($password, $user['password_hash'])) {
             $this->auth->login([
                 'id' => (int)$user['id'],
                 'email' => $user['email'],
+                'name' => $user['name'],
                 'role' => $user['role'],
             ]);
             $this->response->redirect('/render');
         }
-        $this->view->render('auth/login', [
-            'csrf' => $this->csrf,
-            'error' => 'Invalid credentials',
-        ]);
+        $this->session->flash('error', 'Giriş bilgileri hatalı veya hesap pasif.');
+        $this->response->redirect('/login');
     }
 
     public function logout(): void

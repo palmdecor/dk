@@ -2,19 +2,25 @@
 
 declare(strict_types=1);
 
+use App\Controllers\AdminDashboardController;
 use App\Controllers\AdminFontsController;
+use App\Controllers\AdminSettingsController;
 use App\Controllers\AdminTemplatesController;
+use App\Controllers\AdminUsersController;
 use App\Controllers\AuthController;
+use App\Controllers\DownloadController;
 use App\Controllers\RenderController;
 use App\Core\Auth;
 use App\Core\Csrf;
 use App\Core\DB;
+use App\Core\ErrorHandler;
 use App\Core\Response;
 use App\Core\Router;
 use App\Core\Session;
 use App\Core\View;
-use App\Services\Renderer;
+use App\Services\ImageRenderer;
 use App\Services\Storage;
+use App\Services\TelegramNotifier;
 use App\Services\TextLayout;
 
 $root = dirname(__DIR__);
@@ -37,21 +43,8 @@ if (file_exists($autoload)) {
 
 $config = require $root . '/config/config.php';
 
-define('APP_DEBUG', (bool)($config['app']['debug'] ?? false));
-
-set_error_handler(function (int $severity, string $message, string $file, int $line): void {
-    throw new ErrorException($message, 0, $severity, $file, $line);
-});
-
-set_exception_handler(function (Throwable $exception): void {
-    http_response_code(500);
-    if (APP_DEBUG) {
-        echo '<h1>Application Error</h1>';
-        echo '<pre>' . htmlspecialchars((string)$exception, ENT_QUOTES, 'UTF-8') . '</pre>';
-        return;
-    }
-    echo '<h1>Something went wrong</h1><p>Please try again later.</p>';
-});
+$errorHandler = new ErrorHandler((bool)($config['app']['debug'] ?? false));
+$errorHandler->register();
 
 $session = new Session();
 $session->start();
@@ -67,12 +60,17 @@ $storage = new Storage($config['storage']);
 $storage->ensure();
 
 $textLayout = new TextLayout();
-$renderer = new Renderer($textLayout);
+$imageRenderer = new ImageRenderer($textLayout);
+$notifier = new TelegramNotifier($config['telegram']['notify_url'] ?? '');
 
-$authController = new AuthController($db, $auth, $csrf, $response, $view);
-$fontsController = new AdminFontsController($db, $auth, $csrf, $response, $view, $storage, $session, $config);
-$templatesController = new AdminTemplatesController($db, $auth, $csrf, $response, $view, $storage, $renderer, $session, $config);
-$renderController = new RenderController($db, $auth, $csrf, $response, $view, $storage, $renderer, $session, $config);
+$authController = new AuthController($db, $auth, $csrf, $response, $view, $session);
+$adminDashboard = new AdminDashboardController($db, $auth, $response, $view, $session);
+$adminUsers = new AdminUsersController($db, $auth, $csrf, $response, $view, $session);
+$adminFonts = new AdminFontsController($db, $auth, $csrf, $response, $view, $storage, $session, $config);
+$adminTemplates = new AdminTemplatesController($db, $auth, $csrf, $response, $view, $storage, $imageRenderer, $session, $config);
+$adminSettings = new AdminSettingsController($db, $auth, $csrf, $response, $view, $session);
+$renderController = new RenderController($db, $auth, $csrf, $response, $view, $storage, $imageRenderer, $notifier, $session, $config);
+$downloadController = new DownloadController($db, $auth, $response, $storage);
 
 $router = new Router();
 
@@ -81,27 +79,35 @@ $router->get('/login', fn () => $authController->showLogin());
 $router->post('/login', fn () => $authController->login());
 $router->post('/logout', fn () => $authController->logout());
 
-$router->get('/admin/fonts', fn () => $fontsController->index());
-$router->post('/admin/fonts/upload', fn () => $fontsController->upload());
-$router->post('/admin/fonts/{id}/toggle', fn ($params) => $fontsController->toggle($params));
-$router->get('/admin/fonts/test/{id}', fn ($params) => $fontsController->test($params));
+$router->get('/admin/dashboard', fn () => $adminDashboard->index());
+$router->get('/admin/users', fn () => $adminUsers->index());
+$router->post('/admin/users/create', fn () => $adminUsers->create());
+$router->post('/admin/users/delete/{id}', fn ($params) => $adminUsers->delete($params));
+$router->post('/admin/users/toggle/{id}', fn ($params) => $adminUsers->toggle($params));
 
-$router->get('/admin/templates', fn () => $templatesController->index());
-$router->get('/admin/templates/create', fn () => $templatesController->createForm());
-$router->post('/admin/templates', fn () => $templatesController->store());
-$router->get('/admin/templates/{id}/edit', fn ($params) => $templatesController->edit($params));
-$router->post('/admin/templates/{id}/overlay', fn ($params) => $templatesController->uploadOverlay($params));
-$router->get('/admin/templates/{id}/overlay-view', fn ($params) => $templatesController->overlayView($params));
-$router->post('/admin/templates/{id}/fields', fn ($params) => $templatesController->saveFields($params));
-$router->post('/admin/templates/{id}/test-render', fn ($params) => $templatesController->testRender($params));
+$router->get('/admin/fonts', fn () => $adminFonts->index());
+$router->post('/admin/fonts/upload', fn () => $adminFonts->upload());
+$router->post('/admin/fonts/toggle/{id}', fn ($params) => $adminFonts->toggle($params));
+$router->post('/admin/fonts/test/{id}', fn ($params) => $adminFonts->test($params));
 
-$router->get('/templates', fn () => $renderController->templates());
-$router->get('/templates/{id}', fn ($params) => $renderController->templateDetail($params));
-$router->get('/render', fn () => $renderController->renderForm());
+$router->get('/admin/templates', fn () => $adminTemplates->index());
+$router->get('/admin/templates/create', fn () => $adminTemplates->createForm());
+$router->post('/admin/templates', fn () => $adminTemplates->store());
+$router->get('/admin/templates/{id}/edit', fn ($params) => $adminTemplates->edit($params));
+$router->post('/admin/templates/{id}/overlay', fn ($params) => $adminTemplates->uploadOverlay($params));
+$router->post('/admin/templates/{id}/fields', fn ($params) => $adminTemplates->saveFields($params));
+$router->post('/admin/templates/{id}/test-render', fn ($params) => $adminTemplates->testRender($params));
+
+$router->post('/admin/renders/delete/{id}', fn ($params) => $adminDashboard->deleteRender($params));
+
+$router->get('/admin/settings', fn () => $adminSettings->index());
+$router->post('/admin/settings/save', fn () => $adminSettings->save());
+
+$router->get('/render', fn () => $renderController->form());
 $router->post('/render/image', fn () => $renderController->renderImage());
-$router->get('/renders/{id}', fn ($params) => $renderController->renderStatus($params));
-$router->get('/download/{id}', fn ($params) => $renderController->download($params));
-$router->get('/preview/{id}', fn ($params) => $renderController->preview($params));
+$router->get('/renders/{id}', fn ($params) => $renderController->status($params));
+$router->get('/templates/{id}', fn ($params) => $renderController->templateInfo($params));
+$router->get('/download/{id}', fn ($params) => $downloadController->download($params));
 
 $path = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH) ?? '/';
 $method = $_SERVER['REQUEST_METHOD'] ?? 'GET';

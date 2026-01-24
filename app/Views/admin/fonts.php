@@ -3,30 +3,30 @@ use App\Core\Helpers;
 
 ob_start();
 ?>
-<h1>Fonts</h1>
+<h1>Fontlar</h1>
 <?php if (!$freetype): ?>
-  <div class="notice notice-warning">GD FreeType support is not available. Font rendering may fail without Imagick.</div>
+  <div class="notice notice-warning">GD FreeType desteği yok. Imagick yoksa render sorunlu olabilir.</div>
 <?php endif; ?>
 <form method="post" action="/admin/fonts/upload" enctype="multipart/form-data">
   <?php echo $csrf->field(); ?>
-  <label>Font name</label>
+  <label>Font Adı</label>
   <input name="name" required>
-  <label>Font file (ttf/otf)</label>
+  <label>Font Dosyası (ttf/otf)</label>
   <input type="file" name="font" required>
-  <button type="submit">Upload</button>
+  <button type="submit">Yükle</button>
 </form>
 <table class="table">
   <thead>
     <tr>
-      <th>Name</th>
-      <th>Status</th>
-      <th>Preview</th>
-      <th>Actions</th>
+      <th>Ad</th>
+      <th>Durum</th>
+      <th>Önizleme</th>
+      <th>İşlem</th>
     </tr>
   </thead>
   <tbody>
     <?php if (empty($fonts)): ?>
-      <tr><td colspan="4">No fonts</td></tr>
+      <tr><td colspan="4">Font yok</td></tr>
     <?php endif; ?>
     <?php foreach ($fonts as $font): ?>
       <?php $previewFile = $previewPath . '/font_' . (int)$font['id'] . '.png'; ?>
@@ -35,17 +35,20 @@ ob_start();
         <td><?php echo Helpers::e($font['status']); ?></td>
         <td>
           <?php if (file_exists($previewFile)): ?>
-            <img src="/preview/<?php echo Helpers::e('font_' . (int)$font['id'] . '.png'); ?>" alt="Font preview" width="160">
+            <img src="/download/<?php echo Helpers::e('font_' . (int)$font['id']); ?>" alt="Font preview" width="160">
           <?php else: ?>
-            <span class="small">No preview yet</span>
+            <span class="small">Önizleme yok</span>
           <?php endif; ?>
         </td>
         <td>
-          <form method="post" action="/admin/fonts/<?php echo (int)$font['id']; ?>/toggle">
+          <form method="post" action="/admin/fonts/toggle/<?php echo (int)$font['id']; ?>">
             <?php echo $csrf->field(); ?>
-            <button type="submit">Toggle</button>
+            <button class="secondary" type="submit">Aktif/Pasif</button>
           </form>
-          <a class="button-link" href="/admin/fonts/test/<?php echo (int)$font['id']; ?>">Font Test</a>
+          <form method="post" action="/admin/fonts/test/<?php echo (int)$font['id']; ?>">
+            <?php echo $csrf->field(); ?>
+            <button type="submit">Test</button>
+          </form>
         </td>
       </tr>
     <?php endforeach; ?>
@@ -53,6 +56,6 @@ ob_start();
 </table>
 <?php
 $content = ob_get_clean();
-$title = 'Fonts';
-include __DIR__ . '/../../layout.php';
+$title = 'Fontlar';
+include __DIR__ . '/../layout.php';
 ?>

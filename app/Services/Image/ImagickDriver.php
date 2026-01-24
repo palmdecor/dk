@@ -16,7 +16,7 @@ final class ImagickDriver
     {
     }
 
-    public function render(array $template, array $fields, string $inputPath, string $outputPath, string $previewPath, string $headline, string $subhead, ?string $overlayPath): void
+    public function render(array $template, array $fields, string $inputPath, string $outputPath, string $previewPath, string $headline, string $subhead, ?string $overlayPath, array $transform): void
     {
         $canvas = new Imagick();
         $canvas->newImage((int)$template['width'], (int)$template['height'], new ImagickPixel($template['background_color'] ?: '#000000'));
@@ -28,15 +28,22 @@ final class ImagickDriver
 
         $targetW = (int)$template['width'];
         $targetH = (int)$template['height'];
-        if ($template['media_fit_mode'] === 'contain') {
-            $photo->thumbnailImage($targetW, $targetH, true);
-            $x = (int)(($targetW - $photo->getImageWidth()) / 2);
-            $y = (int)(($targetH - $photo->getImageHeight()) / 2);
-            $canvas->compositeImage($photo, Imagick::COMPOSITE_OVER, $x, $y);
-        } else {
-            $photo->cropThumbnailImage($targetW, $targetH);
-            $canvas->compositeImage($photo, Imagick::COMPOSITE_OVER, 0, 0);
-        }
+        $zoom = max(1.0, min(2.0, (float)($transform['zoom'] ?? 1.0)));
+        $offsetX = (int)($transform['offset_x'] ?? 0);
+        $offsetY = (int)($transform['offset_y'] ?? 0);
+
+        $srcW = $photo->getImageWidth();
+        $srcH = $photo->getImageHeight();
+        $baseScale = $template['media_fit_mode'] === 'contain' ? min($targetW / $srcW, $targetH / $srcH) : max($targetW / $srcW, $targetH / $srcH);
+        $scale = $baseScale * $zoom;
+
+        $newW = (int)round($srcW * $scale);
+        $newH = (int)round($srcH * $scale);
+        $photo->resizeImage($newW, $newH, Imagick::FILTER_LANCZOS, 1.0, true);
+
+        $x = (int)(($targetW - $newW) / 2) + $offsetX;
+        $y = (int)(($targetH - $newH) / 2) + $offsetY;
+        $canvas->compositeImage($photo, Imagick::COMPOSITE_OVER, $x, $y);
 
         foreach ($fields as $field) {
             $text = $field['field_key'] === 'headline' ? $headline : $subhead;
@@ -44,7 +51,7 @@ final class ImagickDriver
                 continue;
             }
             if (empty($field['font_path']) || !file_exists($field['font_path'])) {
-                throw new RuntimeException('Font file missing for ' . $field['field_key']);
+                throw new RuntimeException('Font dosyası bulunamadı: ' . $field['field_key']);
             }
             $measure = function (string $string, int $fontSize) use ($canvas, $field): float {
                 $draw = new ImagickDraw();
@@ -78,10 +85,13 @@ final class ImagickDriver
 
         $preview = clone $canvas;
         $preview->setImageFormat('jpeg');
-        $preview->setImageCompressionQuality(85);
+        $preview->setImageCompressionQuality(95);
         $preview->writeImage($previewPath);
 
         $canvas->setImageFormat($template['export_format']);
+        if ($template['export_format'] === 'jpg') {
+            $canvas->setImageCompressionQuality(95);
+        }
         $canvas->writeImage($outputPath);
     }
 

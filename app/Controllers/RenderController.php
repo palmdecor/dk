@@ -10,8 +10,9 @@ use App\Core\DB;
 use App\Core\Response;
 use App\Core\Session;
 use App\Core\View;
-use App\Services\Renderer;
+use App\Services\ImageRenderer;
 use App\Services\Storage;
+use App\Services\TelegramNotifier;
 use PDO;
 
 final class RenderController
@@ -23,7 +24,8 @@ final class RenderController
         private Response $response,
         private View $view,
         private Storage $storage,
-        private Renderer $renderer,
+        private ImageRenderer $renderer,
+        private TelegramNotifier $notifier,
         private Session $session,
         private array $config
     ) {
@@ -36,77 +38,32 @@ final class RenderController
         }
     }
 
-    public function templates(): void
+    public function form(): void
     {
         $this->requireLogin();
-        $stmt = $this->db->pdo()->query('SELECT * FROM templates ORDER BY created_at DESC');
-        $templates = $stmt->fetchAll(PDO::FETCH_ASSOC);
-        $this->view->render('user/templates/index', [
-            'templates' => $templates,
-        ]);
-    }
-
-    public function renderForm(): void
-    {
-        $this->requireLogin();
-        $stmt = $this->db->pdo()->query('SELECT * FROM templates ORDER BY created_at DESC');
-        $templates = $stmt->fetchAll(PDO::FETCH_ASSOC);
-        $rendersStmt = $this->db->pdo()->prepare('SELECT * FROM renders WHERE user_id = ? ORDER BY created_at DESC LIMIT 20');
+        $templates = $this->db->pdo()->query('SELECT * FROM templates ORDER BY created_at DESC')->fetchAll(PDO::FETCH_ASSOC);
+        $rendersStmt = $this->db->pdo()->prepare('SELECT renders.*, templates.name as template_name FROM renders LEFT JOIN templates ON templates.id = renders.template_id WHERE renders.user_id = ? ORDER BY renders.created_at DESC LIMIT 20');
         $rendersStmt->execute([$this->auth->user()['id']]);
         $renders = $rendersStmt->fetchAll(PDO::FETCH_ASSOC);
-        $this->view->render('user/render/index', [
+        $this->view->render('user/render', [
             'templates' => $templates,
             'renders' => $renders,
             'csrf' => $this->csrf,
+            'minSeconds' => $this->getSetting('render_min_seconds'),
         ]);
     }
 
-    public function templateDetail(array $params): void
+    public function templateInfo(array $params): void
     {
         $this->requireLogin();
         $id = (int)$params['id'];
-        $stmt = $this->db->pdo()->prepare('SELECT t.*, f.id as field_id, f.field_key, f.x, f.y, f.w, f.h, f.padding, f.font_id, f.base_font_size, f.min_font_size, f.max_lines, f.line_height, f.color, f.align, f.valign, f.draw_order FROM templates t LEFT JOIN template_text_fields f ON t.id = f.template_id WHERE t.id = ?');
+        $stmt = $this->db->pdo()->prepare('SELECT id, name, width, height, media_fit_mode, background_color, export_format FROM templates WHERE id = ?');
         $stmt->execute([$id]);
-        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
-        if (!$rows) {
-            $this->response->json(['error' => 'Not found'], 404);
+        $template = $stmt->fetch(PDO::FETCH_ASSOC);
+        if (!$template) {
+            $this->response->json(['error' => 'Şablon bulunamadı'], 404);
         }
-        $template = null;
-        $fields = [];
-        foreach ($rows as $row) {
-            if (!$template) {
-                $template = [
-                    'id' => (int)$row['id'],
-                    'name' => $row['name'],
-                    'width' => (int)$row['width'],
-                    'height' => (int)$row['height'],
-                    'overlay_png_path' => $row['overlay_png_path'],
-                    'media_fit_mode' => $row['media_fit_mode'],
-                    'background_color' => $row['background_color'],
-                    'export_format' => $row['export_format'],
-                ];
-            }
-            if ($row['field_id']) {
-                $fields[] = [
-                    'field_key' => $row['field_key'],
-                    'x' => (int)$row['x'],
-                    'y' => (int)$row['y'],
-                    'w' => (int)$row['w'],
-                    'h' => (int)$row['h'],
-                    'padding' => (int)$row['padding'],
-                    'font_id' => (int)$row['font_id'],
-                    'base_font_size' => (int)$row['base_font_size'],
-                    'min_font_size' => (int)$row['min_font_size'],
-                    'max_lines' => (int)$row['max_lines'],
-                    'line_height' => (float)$row['line_height'],
-                    'color' => $row['color'],
-                    'align' => $row['align'],
-                    'valign' => $row['valign'],
-                    'draw_order' => (int)$row['draw_order'],
-                ];
-            }
-        }
-        $this->response->json(['template' => $template, 'fields' => $fields]);
+        $this->response->json(['template' => $template]);
     }
 
     public function renderImage(): void
@@ -116,24 +73,34 @@ final class RenderController
         $templateId = (int)($_POST['template_id'] ?? 0);
         $headline = trim($_POST['headline'] ?? '');
         $subhead = trim($_POST['subhead'] ?? '');
+        $zoom = (float)($_POST['photo_zoom'] ?? 1.0);
+        $offsetX = (int)($_POST['photo_offset_x'] ?? 0);
+        $offsetY = (int)($_POST['photo_offset_y'] ?? 0);
+
         if ($templateId <= 0 || empty($_FILES['photo']['tmp_name'])) {
-            $this->session->flash('error', 'Template and photo are required.');
+            $this->session->flash('error', 'Şablon ve fotoğraf zorunludur.');
             $this->response->redirect('/render');
         }
         if ($_FILES['photo']['size'] > $this->config['app']['upload_max_size']) {
-            $this->session->flash('error', 'Photo file is too large.');
+            $this->session->flash('error', 'Fotoğraf dosyası çok büyük.');
             $this->response->redirect('/render');
         }
         $file = $_FILES['photo'];
         $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
         if (!in_array($ext, ['jpg', 'jpeg', 'png', 'webp'], true)) {
-            $this->session->flash('error', 'Photo must be JPG, PNG, or WEBP.');
+            $this->session->flash('error', 'Fotoğraf JPG/PNG/WEBP olmalıdır.');
             $this->response->redirect('/render');
         }
         $finfo = new \finfo(FILEINFO_MIME_TYPE);
         $mime = $finfo->file($file['tmp_name']);
         if (!in_array($mime, ['image/jpeg', 'image/png', 'image/webp'], true)) {
-            $this->session->flash('error', 'Invalid photo mime type.');
+            $this->session->flash('error', 'Fotoğraf MIME hatası.');
+            $this->response->redirect('/render');
+        }
+
+        $imgInfo = getimagesize($file['tmp_name']);
+        if ($imgInfo && ($imgInfo[0] * $imgInfo[1] > $this->config['app']['max_image_pixels'])) {
+            $this->session->flash('error', 'Fotoğraf çok büyük. Lütfen daha küçük bir görsel yükleyin.');
             $this->response->redirect('/render');
         }
 
@@ -141,18 +108,18 @@ final class RenderController
         $stmt->execute([$templateId]);
         $template = $stmt->fetch(PDO::FETCH_ASSOC);
         if (!$template) {
-            $this->session->flash('error', 'Template not found.');
+            $this->session->flash('error', 'Şablon bulunamadı.');
             $this->response->redirect('/render');
         }
         if (empty($template['overlay_png_path'])) {
-            $this->session->flash('error', 'Template is missing overlay PNG.');
+            $this->session->flash('error', 'Şablon overlay PNG eksik.');
             $this->response->redirect('/render');
         }
 
         $filename = $this->storage->randomName('input', $ext);
         $dest = $this->storage->path('uploads') . '/' . $filename;
         if (!move_uploaded_file($file['tmp_name'], $dest)) {
-            $this->session->flash('error', 'Failed to save uploaded photo.');
+            $this->session->flash('error', 'Fotoğraf kaydedilemedi.');
             $this->response->redirect('/render');
         }
 
@@ -163,8 +130,14 @@ final class RenderController
             $field['font_path'] = $field['file_path'] ? $this->storage->path('fonts') . '/' . $field['file_path'] : null;
         }
 
-        $insert = $this->db->pdo()->prepare('INSERT INTO renders (user_id, template_id, input_path, status, params_json, created_at) VALUES (?, ?, ?, ?, ?, NOW())');
-        $params = json_encode(['headline' => $headline, 'subhead' => $subhead], JSON_UNESCAPED_UNICODE);
+        $insert = $this->db->pdo()->prepare('INSERT INTO renders (user_id, template_id, input_path, status, params_json, created_at, started_at) VALUES (?, ?, ?, ?, ?, NOW(), NOW())');
+        $params = json_encode([
+            'headline' => $headline,
+            'subhead' => $subhead,
+            'offset_x' => $offsetX,
+            'offset_y' => $offsetY,
+            'zoom' => $zoom,
+        ], JSON_UNESCAPED_UNICODE);
         $insert->execute([$this->auth->user()['id'], $templateId, $filename, 'processing', $params]);
         $renderId = (int)$this->db->pdo()->lastInsertId();
 
@@ -174,21 +147,44 @@ final class RenderController
         $outputPath = $this->storage->path('renders') . '/' . $outputName;
         $overlayPath = $this->storage->path('overlays') . '/' . $template['overlay_png_path'];
 
+        $errorMessage = null;
+        $start = microtime(true);
         try {
-            $this->renderer->render($template, $fields, $dest, $outputPath, $previewPath, $headline, $subhead, $overlayPath);
-            $update = $this->db->pdo()->prepare('UPDATE renders SET output_path = ?, preview_path = ?, status = ? WHERE id = ?');
-            $update->execute([$outputName, $previewName, 'done', $renderId]);
-            $this->session->flash('success', 'Render completed.');
+            $this->renderer->render($template, $fields, $dest, $outputPath, $previewPath, $headline, $subhead, $overlayPath, [
+                'offset_x' => $offsetX,
+                'offset_y' => $offsetY,
+                'zoom' => $zoom,
+            ]);
         } catch (\Throwable $e) {
-            $update = $this->db->pdo()->prepare('UPDATE renders SET status = ? WHERE id = ?');
-            $update->execute(['failed', $renderId]);
-            $this->session->flash('error', 'Render failed: ' . $e->getMessage());
+            $errorMessage = $e->getMessage();
+        }
+
+        $durationMs = (int)((microtime(true) - $start) * 1000);
+        $waitEnabled = (bool)($this->config['app']['render_wait_enabled'] ?? false);
+        $minSeconds = $this->getSetting('render_min_seconds');
+        if ($waitEnabled && $minSeconds > 0) {
+            $minMs = $minSeconds * 1000;
+            if ($durationMs < $minMs) {
+                usleep(($minMs - $durationMs) * 1000);
+                $durationMs = $minMs;
+            }
+        }
+
+        if ($errorMessage === null) {
+            $update = $this->db->pdo()->prepare('UPDATE renders SET output_path = ?, preview_path = ?, status = ?, finished_at = NOW(), duration_ms = ? WHERE id = ?');
+            $update->execute([$outputName, $previewName, 'done', $durationMs, $renderId]);
+            $this->session->flash('success', 'Render tamamlandı.');
+            $this->notifier->notify($this->auth->user()['name'] . ' render tamamladı.');
+        } else {
+            $update = $this->db->pdo()->prepare('UPDATE renders SET status = ?, error_message = ?, finished_at = NOW(), duration_ms = ? WHERE id = ?');
+            $update->execute(['failed', $errorMessage, $durationMs, $renderId]);
+            $this->session->flash('error', 'Render başarısız: ' . $errorMessage);
         }
 
         $this->response->redirect('/render');
     }
 
-    public function renderStatus(array $params): void
+    public function status(array $params): void
     {
         $this->requireLogin();
         $id = (int)$params['id'];
@@ -196,50 +192,16 @@ final class RenderController
         $stmt->execute([$id, $this->auth->user()['id']]);
         $render = $stmt->fetch(PDO::FETCH_ASSOC);
         if (!$render) {
-            $this->response->json(['error' => 'Not found'], 404);
+            $this->response->json(['error' => 'Render bulunamadı'], 404);
         }
-        $render['preview_url'] = $render['preview_path'] ? '/preview/' . $render['preview_path'] : null;
-        $render['download_url'] = $render['output_path'] ? '/download/' . $render['id'] : null;
         $this->response->json($render);
     }
 
-    public function preview(array $params): void
+    private function getSetting(string $key): int
     {
-        $this->requireLogin();
-        $file = basename($params['id']);
-        $path = $this->storage->path('previews') . '/' . $file;
-        if (!file_exists($path)) {
-            http_response_code(404);
-            exit;
-        }
-        header('Content-Type: image/jpeg');
-        if (str_ends_with($file, '.png')) {
-            header('Content-Type: image/png');
-        }
-        readfile($path);
-        exit;
-    }
-
-    public function download(array $params): void
-    {
-        $this->requireLogin();
-        $id = (int)$params['id'];
-        $stmt = $this->db->pdo()->prepare('SELECT * FROM renders WHERE id = ? AND user_id = ?');
-        $stmt->execute([$id, $this->auth->user()['id']]);
-        $render = $stmt->fetch(PDO::FETCH_ASSOC);
-        if (!$render || !$render['output_path']) {
-            http_response_code(404);
-            echo 'Render not found';
-            exit;
-        }
-        $path = $this->storage->path('renders') . '/' . $render['output_path'];
-        if (!file_exists($path)) {
-            http_response_code(404);
-            echo 'File missing';
-            exit;
-        }
-        $ext = pathinfo($path, PATHINFO_EXTENSION);
-        $mime = $ext === 'png' ? 'image/png' : 'image/jpeg';
-        $this->response->file($path, 'render_' . $id . '.' . $ext, $mime);
+        $stmt = $this->db->pdo()->prepare('SELECT settings_value FROM settings WHERE settings_key = ?');
+        $stmt->execute([$key]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        return $row ? (int)$row['settings_value'] : 0;
     }
 }

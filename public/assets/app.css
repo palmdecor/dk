@@ -1,7 +1,7 @@
 :root {
-  --bg: #f5f6f8;
+  --bg: #f6f7fb;
   --panel: #ffffff;
-  --text: #1b1b1b;
+  --text: #111827;
   --muted: #6b7280;
   --primary: #2563eb;
   --danger: #dc2626;
@@ -10,14 +10,12 @@
   --border: #e5e7eb;
 }
 
-* {
-  box-sizing: border-box;
-}
+* { box-sizing: border-box; }
 
 body {
   font-family: "Segoe UI", Arial, sans-serif;
   margin: 0;
-  padding: 24px;
+  padding: 20px;
   background: var(--bg);
   color: var(--text);
 }
@@ -27,7 +25,7 @@ nav {
   flex-wrap: wrap;
   gap: 12px;
   align-items: center;
-  margin-bottom: 20px;
+  margin-bottom: 18px;
 }
 
 nav a {
@@ -36,9 +34,7 @@ nav a {
   font-weight: 600;
 }
 
-form {
-  margin-bottom: 20px;
-}
+form { margin-bottom: 16px; }
 
 label {
   display: block;
@@ -52,7 +48,7 @@ input, select, textarea, button {
   padding: 10px 12px;
   margin-top: 4px;
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: 10px;
   font-size: 14px;
   background: #fff;
 }
@@ -63,35 +59,66 @@ button {
   background: var(--primary);
   border: none;
   color: #fff;
-  font-weight: 600;
+  font-weight: 700;
 }
 
-button:hover {
-  opacity: 0.95;
+button.secondary {
+  background: #374151;
+}
+
+button.danger {
+  background: var(--danger);
 }
 
 .container {
   display: grid;
   grid-template-columns: 1fr;
-  gap: 24px;
+  gap: 20px;
 }
 
 .panel {
   background: var(--panel);
   padding: 16px;
-  border-radius: 12px;
+  border-radius: 14px;
   border: 1px solid var(--border);
+}
+
+.notice {
+  padding: 12px 14px;
+  border-radius: 10px;
+  margin-bottom: 12px;
+  border: 1px solid var(--border);
+  background: #fff;
+}
+
+.notice-error { border-color: rgba(220, 38, 38, 0.4); background: rgba(220, 38, 38, 0.08); }
+.notice-success { border-color: rgba(22, 163, 74, 0.4); background: rgba(22, 163, 74, 0.08); }
+.notice-warning { border-color: rgba(245, 158, 11, 0.4); background: rgba(245, 158, 11, 0.08); }
+
+.small { font-size: 12px; color: var(--muted); }
+
+.table {
+  border-collapse: collapse;
+  width: 100%;
+}
+
+.table th, .table td {
+  border: 1px solid var(--border);
+  padding: 10px;
+  text-align: left;
+  vertical-align: top;
 }
 
 .editor-stage {
   position: relative;
   width: 100%;
   max-width: 900px;
-  border-radius: 12px;
+  border-radius: 14px;
   border: 1px solid var(--border);
   background: #111;
   overflow: hidden;
   margin-top: 12px;
+  min-height: 240px;
 }
 
 .editor-box {
@@ -104,9 +131,7 @@ button:hover {
   min-height: 40px;
 }
 
-.editor-subhead {
-  border-color: #5fd28d;
-}
+.editor-subhead { border-color: #5fd28d; }
 
 .editor-label {
   position: absolute;
@@ -128,59 +153,6 @@ button:hover {
   border: 2px solid #333;
   border-radius: 50%;
   cursor: se-resize;
-}
-
-.table {
-  border-collapse: collapse;
-  width: 100%;
-}
-
-.table th, .table td {
-  border: 1px solid var(--border);
-  padding: 10px;
-  text-align: left;
-  vertical-align: top;
-}
-
-.notice {
-  padding: 12px 14px;
-  border-radius: 8px;
-  margin-bottom: 12px;
-  border: 1px solid var(--border);
-  background: #fff;
-}
-
-.notice-error {
-  border-color: rgba(220, 38, 38, 0.4);
-  background: rgba(220, 38, 38, 0.08);
-}
-
-.notice-success {
-  border-color: rgba(22, 163, 74, 0.4);
-  background: rgba(22, 163, 74, 0.08);
-}
-
-.notice-warning {
-  border-color: rgba(245, 158, 11, 0.4);
-  background: rgba(245, 158, 11, 0.08);
-}
-
-.small {
-  font-size: 12px;
-  color: var(--muted);
-}
-
-.preview img {
-  max-width: 100%;
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  margin-top: 10px;
-}
-
-.field-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-  gap: 12px;
 }
 
 .dropzone {
@@ -207,6 +179,22 @@ button:hover {
   cursor: pointer;
 }
 
+.canvas-wrap {
+  width: 100%;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+  background: #111;
+}
+
+canvas { display: block; max-width: 100%; }
+
+.range {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
 .button-link {
   display: inline-block;
   margin-top: 6px;
@@ -216,17 +204,10 @@ button:hover {
 }
 
 @media (min-width: 900px) {
-  .container {
-    grid-template-columns: 1.2fr 0.8fr;
-  }
+  .container { grid-template-columns: 1.1fr 0.9fr; }
 }
 
 @media (max-width: 600px) {
-  body {
-    padding: 16px;
-  }
-
-  button {
-    max-width: 100%;
-  }
+  body { padding: 14px; }
+  button { max-width: 100%; }
 }

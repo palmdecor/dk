@@ -10,7 +10,7 @@ use App\Core\DB;
 use App\Core\Response;
 use App\Core\Session;
 use App\Core\View;
-use App\Services\Renderer;
+use App\Services\ImageRenderer;
 use App\Services\Storage;
 use PDO;
 
@@ -23,7 +23,7 @@ final class AdminTemplatesController
         private Response $response,
         private View $view,
         private Storage $storage,
-        private Renderer $renderer,
+        private ImageRenderer $renderer,
         private Session $session,
         private array $config
     ) {
@@ -36,7 +36,7 @@ final class AdminTemplatesController
         }
         if (!$this->auth->isAdmin()) {
             http_response_code(403);
-            echo 'Forbidden';
+            echo 'Yetkisiz';
             exit;
         }
     }
@@ -44,9 +44,8 @@ final class AdminTemplatesController
     public function index(): void
     {
         $this->requireAdmin();
-        $stmt = $this->db->pdo()->query('SELECT * FROM templates ORDER BY created_at DESC');
-        $templates = $stmt->fetchAll(PDO::FETCH_ASSOC);
-        $this->view->render('admin/templates/index', [
+        $templates = $this->db->pdo()->query('SELECT * FROM templates ORDER BY created_at DESC')->fetchAll(PDO::FETCH_ASSOC);
+        $this->view->render('admin/templates', [
             'templates' => $templates,
             'csrf' => $this->csrf,
         ]);
@@ -55,7 +54,7 @@ final class AdminTemplatesController
     public function createForm(): void
     {
         $this->requireAdmin();
-        $this->view->render('admin/templates/create', [
+        $this->view->render('admin/template_create', [
             'csrf' => $this->csrf,
         ]);
     }
@@ -71,12 +70,12 @@ final class AdminTemplatesController
         $background = $_POST['background_color'] ?? '#000000';
         $format = $_POST['export_format'] ?? 'jpg';
         if ($name === '' || $width <= 0 || $height <= 0) {
-            $this->session->flash('error', 'Template name and size are required.');
+            $this->session->flash('error', 'Şablon adı ve ölçüler zorunludur.');
             $this->response->redirect('/admin/templates/create');
         }
         $stmt = $this->db->pdo()->prepare('INSERT INTO templates (name, width, height, media_fit_mode, background_color, export_format, created_at) VALUES (?, ?, ?, ?, ?, ?, NOW())');
         $stmt->execute([$name, $width, $height, $fit, $background, $format]);
-        $this->session->flash('success', 'Template created.');
+        $this->session->flash('success', 'Şablon oluşturuldu.');
         $this->response->redirect('/admin/templates');
     }
 
@@ -89,7 +88,7 @@ final class AdminTemplatesController
         $template = $stmt->fetch(PDO::FETCH_ASSOC);
         if (!$template) {
             http_response_code(404);
-            echo 'Template not found';
+            echo 'Şablon bulunamadı';
             exit;
         }
 
@@ -104,7 +103,7 @@ final class AdminTemplatesController
         }
         $fonts = $this->db->pdo()->query("SELECT * FROM fonts WHERE status = 'active' ORDER BY name")->fetchAll(PDO::FETCH_ASSOC);
 
-        $this->view->render('admin/templates/edit', [
+        $this->view->render('admin/template_edit', [
             'template' => $template,
             'fields' => $fieldsByKey,
             'fonts' => $fonts,
@@ -117,56 +116,35 @@ final class AdminTemplatesController
         $this->requireAdmin();
         $this->csrf->verify();
         if (empty($_FILES['overlay']['tmp_name'])) {
-            $this->session->flash('error', 'Overlay file is required.');
+            $this->session->flash('error', 'Overlay PNG yükleyin.');
             $this->response->redirect('/admin/templates/' . (int)$params['id'] . '/edit');
         }
         if ($_FILES['overlay']['size'] > $this->config['app']['upload_max_size']) {
-            $this->session->flash('error', 'Overlay file is too large.');
+            $this->session->flash('error', 'Overlay dosyası çok büyük.');
             $this->response->redirect('/admin/templates/' . (int)$params['id'] . '/edit');
         }
         $file = $_FILES['overlay'];
         $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
         if ($ext !== 'png') {
-            $this->session->flash('error', 'Overlay must be a PNG file.');
+            $this->session->flash('error', 'Overlay PNG olmalıdır.');
             $this->response->redirect('/admin/templates/' . (int)$params['id'] . '/edit');
         }
         $finfo = new \finfo(FILEINFO_MIME_TYPE);
         $mime = $finfo->file($file['tmp_name']);
         if ($mime !== 'image/png') {
-            $this->session->flash('error', 'Invalid overlay mime type.');
+            $this->session->flash('error', 'Overlay MIME hatası.');
             $this->response->redirect('/admin/templates/' . (int)$params['id'] . '/edit');
         }
         $filename = $this->storage->randomName('overlay', 'png');
         $dest = $this->storage->path('overlays') . '/' . $filename;
         if (!move_uploaded_file($file['tmp_name'], $dest)) {
-            $this->session->flash('error', 'Failed to save overlay.');
+            $this->session->flash('error', 'Overlay kaydedilemedi.');
             $this->response->redirect('/admin/templates/' . (int)$params['id'] . '/edit');
         }
         $stmt = $this->db->pdo()->prepare('UPDATE templates SET overlay_png_path = ? WHERE id = ?');
         $stmt->execute([$filename, (int)$params['id']]);
-        $this->session->flash('success', 'Overlay uploaded.');
+        $this->session->flash('success', 'Overlay yüklendi.');
         $this->response->redirect('/admin/templates/' . (int)$params['id'] . '/edit');
-    }
-
-    public function overlayView(array $params): void
-    {
-        $this->requireAdmin();
-        $id = (int)$params['id'];
-        $stmt = $this->db->pdo()->prepare('SELECT overlay_png_path FROM templates WHERE id = ?');
-        $stmt->execute([$id]);
-        $template = $stmt->fetch(PDO::FETCH_ASSOC);
-        if (!$template || !$template['overlay_png_path']) {
-            http_response_code(404);
-            exit;
-        }
-        $path = $this->storage->path('overlays') . '/' . $template['overlay_png_path'];
-        if (!file_exists($path)) {
-            http_response_code(404);
-            exit;
-        }
-        header('Content-Type: image/png');
-        readfile($path);
-        exit;
     }
 
     public function saveFields(array $params): void
@@ -174,7 +152,7 @@ final class AdminTemplatesController
         $this->requireAdmin();
         $payload = json_decode(file_get_contents('php://input'), true);
         if (!$payload || empty($payload['fields'])) {
-            $this->response->json(['error' => 'Invalid payload'], 400);
+            $this->response->json(['error' => 'Geçersiz veri'], 400);
         }
         $templateId = (int)$params['id'];
         $db = $this->db->pdo();
@@ -249,11 +227,11 @@ final class AdminTemplatesController
     {
         $this->requireAdmin();
         $templateId = (int)$params['id'];
-        $templateStmt = $this->db->pdo()->prepare('SELECT * FROM templates WHERE id = ?');
-        $templateStmt->execute([$templateId]);
-        $template = $templateStmt->fetch(PDO::FETCH_ASSOC);
-        if (!$template) {
-            $this->response->json(['error' => 'Template not found'], 404);
+        $template = $this->db->pdo()->prepare('SELECT * FROM templates WHERE id = ?');
+        $template->execute([$templateId]);
+        $tpl = $template->fetch(PDO::FETCH_ASSOC);
+        if (!$tpl) {
+            $this->response->json(['error' => 'Şablon bulunamadı'], 404);
         }
         $fieldsStmt = $this->db->pdo()->prepare('SELECT f.*, fonts.file_path FROM template_text_fields f LEFT JOIN fonts ON fonts.id = f.font_id WHERE f.template_id = ? ORDER BY draw_order');
         $fieldsStmt->execute([$templateId]);
@@ -267,20 +245,24 @@ final class AdminTemplatesController
             $sampleImage = imagecreatetruecolor(1200, 800);
             $bg = imagecolorallocate($sampleImage, 80, 80, 80);
             imagefill($sampleImage, 0, 0, $bg);
-            imagejpeg($sampleImage, $samplePath, 85);
+            imagejpeg($sampleImage, $samplePath, 95);
             imagedestroy($sampleImage);
         }
 
-        $output = $this->storage->path('renders') . '/' . $this->storage->randomName('render', $template['export_format']);
+        $output = $this->storage->path('renders') . '/' . $this->storage->randomName('render', $tpl['export_format']);
         $preview = $this->storage->path('previews') . '/' . $this->storage->randomName('preview', 'jpg');
-        $overlay = $template['overlay_png_path'] ? $this->storage->path('overlays') . '/' . $template['overlay_png_path'] : null;
+        $overlay = $tpl['overlay_png_path'] ? $this->storage->path('overlays') . '/' . $tpl['overlay_png_path'] : null;
 
         try {
-            $this->renderer->render($template, $fields, $samplePath, $output, $preview, 'Headline Example', 'Subhead example goes here', $overlay);
-            $previewId = basename($preview);
-            $this->response->json(['preview_url' => '/preview/' . $previewId]);
+            $this->renderer->render($tpl, $fields, $samplePath, $output, $preview, 'Başlık Örneği', 'Alt başlık örneği', $overlay, [
+                'offset_x' => 0,
+                'offset_y' => 0,
+                'zoom' => 1.0,
+            ]);
+            $previewId = pathinfo($preview, PATHINFO_FILENAME);
+            $this->response->json(['preview_url' => '/download/' . $previewId]);
         } catch (\Throwable $e) {
-            $this->response->json(['error' => 'Render failed: ' . $e->getMessage()], 500);
+            $this->response->json(['error' => 'Render başarısız: ' . $e->getMessage()], 500);
         }
     }
 
@@ -291,9 +273,9 @@ final class AdminTemplatesController
         $existing = $stmt->fetchAll(PDO::FETCH_COLUMN);
         $defaults = [
             'headline' => [
-                'x' => 50,
-                'y' => 50,
-                'w' => 500,
+                'x' => 60,
+                'y' => 60,
+                'w' => 520,
                 'h' => 200,
                 'padding' => 0,
                 'font_id' => null,
@@ -315,9 +297,9 @@ final class AdminTemplatesController
                 'draw_order' => 1,
             ],
             'subhead' => [
-                'x' => 50,
-                'y' => 300,
-                'w' => 500,
+                'x' => 60,
+                'y' => 320,
+                'w' => 520,
                 'h' => 160,
                 'padding' => 0,
                 'font_id' => null,

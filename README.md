@@ -1,31 +1,38 @@
-# Invenio MVP (Shared Hosting)
+# Invenio (Shared Hosting MVP)
 
-A plain PHP 8 + MySQL MVP for shared hosting. Admins manage templates and fonts, define headline/subhead boxes on a canvas, and users upload photos to render outputs.
+Bu proje Apache + PHP 8.x + MySQL üzerinde çalışan, shared hosting uyumlu bir görsel render uygulamasıdır.
 
-## Requirements
+## Gereksinimler
 
 - PHP 8.x
 - MySQL / MariaDB
-- Apache with `.htaccess` rewrite enabled
-- Imagick (preferred) or GD (fallback)
+- Apache (public/.htaccess rewrite aktif)
+- Imagick (varsa kullanılacak) veya GD + FreeType
 
-## Setup
+## Kurulum
 
-1. Install dependencies:
+1) Composer autoload dosyalarını üretin:
 
 ```bash
 composer install
 ```
 
-2. Create the database schema:
+2) Veritabanı şemasını içeri aktarın:
 
 ```sql
 SOURCE schema.sql;
 ```
 
-3. Configure credentials in `config/config.php` (or use env vars `DB_DSN`, `DB_USER`, `DB_PASS`, `BASE_URL`).
+3) `config/config.php` üzerinden DB bilgilerini düzenleyin veya ortam değişkenlerini kullanın:
 
-4. Ensure storage folders are writable:
+- `DB_DSN`
+- `DB_USER`
+- `DB_PASS`
+- `APP_DEBUG` (true/false)
+- `TELEGRAM_NOTIFY_URL`
+- `RENDER_WAIT_ENABLED`
+
+4) `storage/` klasörleri yazılabilir olmalıdır:
 
 ```
 storage/
@@ -36,22 +43,25 @@ storage/renders/
 storage/previews/
 ```
 
-5. Create the first admin user (example):
+5) İlk admin kullanıcıyı oluşturun:
 
 ```php
-<?php echo password_hash('your-password', PASSWORD_DEFAULT); ?>
+<?php echo password_hash('sifreniz', PASSWORD_DEFAULT); ?>
 ```
 
 ```sql
-INSERT INTO users (email, password_hash, role) VALUES (
+INSERT INTO users (email, password_hash, name, role, status) VALUES (
   'admin@example.com',
-  '$2y$10$yourGeneratedHashHere',
-  'admin'
+  '$2y$10$uretilenHash',
+  'Yonetici',
+  'admin',
+  'active'
 );
 ```
 
-## Notes
+## Notlar
 
-- Overlay PNG is required for renders.
-- SVG upload is not wired in the MVP (PNG overlay only).
-- Video rendering is intentionally omitted (shared hosting FFmpeg not guaranteed).
+- Overlay PNG zorunludur. SVG alanı opsiyonel olarak saklanır.
+- Render tamamlanınca Telegram URL tanımlıysa HTTP POST yapılır.
+- Üye render silemez, sadece admin silebilir.
+- Admin panelde render süresi ayarı vardır; opsiyonel bekletme config üzerinden açılır.

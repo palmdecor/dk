@@ -30,7 +30,7 @@ final class Csrf
         $token = $_POST['csrf'] ?? '';
         if (!$token || !hash_equals($this->session->get('csrf', ''), $token)) {
             http_response_code(400);
-            echo 'Invalid CSRF token';
+            echo 'CSRF hatası';
             exit;
         }
     }

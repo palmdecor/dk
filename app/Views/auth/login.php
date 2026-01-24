@@ -3,21 +3,20 @@ use App\Core\Helpers;
 
 ob_start();
 ?>
-<h1>Login</h1>
+<h1>Giriş</h1>
 <form method="post" action="/login">
   <?php echo $csrf->field(); ?>
-  <label>Email</label>
+  <label>E-posta</label>
   <input name="email" required>
-  <label>Password</label>
+  <label>Şifre</label>
   <input type="password" name="password" required>
-  <button type="submit">Login</button>
+  <button type="submit">Giriş Yap</button>
 </form>
 <?php if (!empty($error)): ?>
-  <p style="color:red"><?php echo Helpers::e($error); ?></p>
+  <p class="small" style="color:#dc2626"><?php echo Helpers::e($error); ?></p>
 <?php endif; ?>
-<p class="small">Create the first admin user by inserting into the users table (see README).</p>
 <?php
 $content = ob_get_clean();
-$title = 'Login';
+$title = 'Giriş';
 include __DIR__ . '/../layout.php';
 ?>

@@ -2,7 +2,9 @@ CREATE TABLE users (
   id INT AUTO_INCREMENT PRIMARY KEY,
   email VARCHAR(190) NOT NULL UNIQUE,
   password_hash VARCHAR(255) NOT NULL,
+  name VARCHAR(190) NOT NULL,
   role ENUM('admin','user') NOT NULL DEFAULT 'user',
+  status ENUM('active','inactive') NOT NULL DEFAULT 'active',
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -10,6 +12,7 @@ CREATE TABLE fonts (
   id INT AUTO_INCREMENT PRIMARY KEY,
   name VARCHAR(190) NOT NULL,
   file_path VARCHAR(255) NOT NULL,
+  file_hash VARCHAR(64) NOT NULL,
   status ENUM('active','inactive') NOT NULL DEFAULT 'active',
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -20,6 +23,7 @@ CREATE TABLE templates (
   width INT NOT NULL,
   height INT NOT NULL,
   overlay_png_path VARCHAR(255) DEFAULT NULL,
+  overlay_svg_path VARCHAR(255) DEFAULT NULL,
   media_fit_mode ENUM('cover','contain') NOT NULL DEFAULT 'cover',
   background_color VARCHAR(20) DEFAULT '#000000',
   export_format ENUM('jpg','png') NOT NULL DEFAULT 'jpg',
@@ -66,7 +70,17 @@ CREATE TABLE renders (
   preview_path VARCHAR(255) DEFAULT NULL,
   params_json JSON NOT NULL,
   status ENUM('processing','done','failed') NOT NULL DEFAULT 'processing',
+  error_message VARCHAR(255) DEFAULT NULL,
+  started_at DATETIME DEFAULT NULL,
+  finished_at DATETIME DEFAULT NULL,
+  duration_ms INT DEFAULT NULL,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
   FOREIGN KEY (template_id) REFERENCES templates(id) ON DELETE CASCADE
+);
+
+CREATE TABLE settings (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  settings_key VARCHAR(120) NOT NULL UNIQUE,
+  settings_value TEXT NOT NULL
 );

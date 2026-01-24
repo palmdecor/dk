@@ -1,6 +1,6 @@
 {
   "name": "invenio/mvp",
-  "description": "Invenio MVP shared hosting app",
+  "description": "Invenio MVP shared hosting uygulaması",
   "type": "project",
   "require": {
     "php": ">=8.0"

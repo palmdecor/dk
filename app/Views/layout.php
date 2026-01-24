@@ -15,18 +15,19 @@ $success = $session->flash('success');
   <nav>
     <?php if ($auth->check()): ?>
       <a href="/render">Render</a>
-      <a href="/templates">Templates</a>
       <?php if ($auth->isAdmin()): ?>
-        <a href="/admin/templates">Admin Templates</a>
-        <a href="/admin/templates/create">New Template</a>
-        <a href="/admin/fonts">Fonts</a>
+        <a href="/admin/dashboard">Dashboard</a>
+        <a href="/admin/users">Üyeler</a>
+        <a href="/admin/templates">Şablonlar</a>
+        <a href="/admin/fonts">Fontlar</a>
+        <a href="/admin/settings">Ayarlar</a>
       <?php endif; ?>
       <form method="post" action="/logout" style="display:inline">
         <?php echo $csrf->field(); ?>
-        <button type="submit">Logout</button>
+        <button type="submit">Çıkış</button>
       </form>
     <?php else: ?>
-      <a href="/login">Login</a>
+      <a href="/login">Giriş</a>
     <?php endif; ?>
   </nav>
   <?php if ($error): ?>
@@ -36,5 +37,6 @@ $success = $session->flash('success');
     <div class="notice notice-success"><?php echo Helpers::e($success); ?></div>
   <?php endif; ?>
   <?php echo $content; ?>
+  <script src="/assets/app.js"></script>
 </body>
 </html>

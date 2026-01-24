@@ -34,7 +34,7 @@ final class AdminFontsController
         }
         if (!$this->auth->isAdmin()) {
             http_response_code(403);
-            echo 'Forbidden';
+            echo 'Yetkisiz';
             exit;
         }
     }
@@ -44,7 +44,7 @@ final class AdminFontsController
         $this->requireAdmin();
         $stmt = $this->db->pdo()->query('SELECT * FROM fonts ORDER BY created_at DESC');
         $fonts = $stmt->fetchAll(PDO::FETCH_ASSOC);
-        $this->view->render('admin/fonts/index', [
+        $this->view->render('admin/fonts', [
             'fonts' => $fonts,
             'csrf' => $this->csrf,
             'freetype' => function_exists('imagettftext'),
@@ -58,37 +58,38 @@ final class AdminFontsController
         $this->csrf->verify();
         $name = trim($_POST['name'] ?? '');
         if ($name === '' || empty($_FILES['font']['tmp_name'])) {
-            $this->session->flash('error', 'Font name and file are required.');
+            $this->session->flash('error', 'Font adı ve dosya zorunludur.');
             $this->response->redirect('/admin/fonts');
         }
         if ($_FILES['font']['size'] > $this->config['app']['upload_max_size']) {
-            $this->session->flash('error', 'Font file is too large.');
+            $this->session->flash('error', 'Font dosyası çok büyük.');
             $this->response->redirect('/admin/fonts');
         }
         $file = $_FILES['font'];
         $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
         if (!in_array($ext, ['ttf', 'otf'], true)) {
-            $this->session->flash('error', 'Font must be a .ttf or .otf file.');
+            $this->session->flash('error', 'Sadece .ttf veya .otf kabul edilir.');
             $this->response->redirect('/admin/fonts');
         }
         $finfo = new \finfo(FILEINFO_MIME_TYPE);
         $mime = $finfo->file($file['tmp_name']);
         $allowedMimes = ['font/ttf', 'font/otf', 'application/x-font-ttf', 'application/font-sfnt', 'application/octet-stream'];
         if (!in_array($mime, $allowedMimes, true)) {
-            $this->session->flash('error', 'Font mime type is not supported.');
+            $this->session->flash('error', 'Font MIME tipi desteklenmiyor.');
             $this->response->redirect('/admin/fonts');
         }
         $filename = $this->storage->randomName('font', $ext);
         $dest = $this->storage->path('fonts') . '/' . $filename;
         if (!move_uploaded_file($file['tmp_name'], $dest)) {
-            $this->session->flash('error', 'Failed to save font file.');
+            $this->session->flash('error', 'Font kaydedilemedi.');
             $this->response->redirect('/admin/fonts');
         }
         chmod($dest, 0664);
+        $hash = hash_file('sha256', $dest);
 
-        $stmt = $this->db->pdo()->prepare('INSERT INTO fonts (name, file_path, status, created_at) VALUES (?, ?, ?, NOW())');
-        $stmt->execute([$name, $filename, 'active']);
-        $this->session->flash('success', 'Font uploaded successfully.');
+        $stmt = $this->db->pdo()->prepare('INSERT INTO fonts (name, file_path, file_hash, status, created_at) VALUES (?, ?, ?, ?, NOW())');
+        $stmt->execute([$name, $filename, $hash, 'active']);
+        $this->session->flash('success', 'Font yüklendi.');
         $this->response->redirect('/admin/fonts');
     }
 
@@ -101,30 +102,31 @@ final class AdminFontsController
         $stmt->execute([$id]);
         $font = $stmt->fetch(PDO::FETCH_ASSOC);
         if (!$font) {
-            $this->session->flash('error', 'Font not found.');
+            $this->session->flash('error', 'Font bulunamadı.');
             $this->response->redirect('/admin/fonts');
         }
         $newStatus = $font['status'] === 'active' ? 'inactive' : 'active';
         $update = $this->db->pdo()->prepare('UPDATE fonts SET status = ? WHERE id = ?');
         $update->execute([$newStatus, $id]);
-        $this->session->flash('success', 'Font status updated.');
+        $this->session->flash('success', 'Font durumu güncellendi.');
         $this->response->redirect('/admin/fonts');
     }
 
     public function test(array $params): void
     {
         $this->requireAdmin();
+        $this->csrf->verify();
         $id = (int)$params['id'];
         $stmt = $this->db->pdo()->prepare('SELECT * FROM fonts WHERE id = ?');
         $stmt->execute([$id]);
         $font = $stmt->fetch(PDO::FETCH_ASSOC);
         if (!$font) {
-            $this->session->flash('error', 'Font not found.');
+            $this->session->flash('error', 'Font bulunamadı.');
             $this->response->redirect('/admin/fonts');
         }
         $fontPath = $this->storage->path('fonts') . '/' . $font['file_path'];
         if (!file_exists($fontPath)) {
-            $this->session->flash('error', 'Font file missing.');
+            $this->session->flash('error', 'Font dosyası eksik.');
             $this->response->redirect('/admin/fonts');
         }
         $previewPath = $this->storage->path('previews') . '/font_' . $id . '.png';
@@ -144,7 +146,7 @@ final class AdminFontsController
                 $image->writeImage($previewPath);
             } else {
                 if (!function_exists('imagettftext')) {
-                    throw new \RuntimeException('FreeType support is not available.');
+                    throw new \RuntimeException('FreeType desteği yok.');
                 }
                 $img = imagecreatetruecolor(600, 160);
                 $bg = imagecolorallocate($img, 31, 31, 31);
@@ -155,9 +157,9 @@ final class AdminFontsController
                 imagepng($img, $previewPath);
                 imagedestroy($img);
             }
-            $this->session->flash('success', 'Font preview generated.');
+            $this->session->flash('success', 'Font testi üretildi.');
         } catch (\Throwable $e) {
-            $this->session->flash('error', 'Font preview failed: ' . $e->getMessage());
+            $this->session->flash('error', 'Font testi başarısız: ' . $e->getMessage());
         }
 
         $this->response->redirect('/admin/fonts');

@@ -30,11 +30,10 @@ final class Storage
     public function path(string $key): string
     {
         $root = $this->config['root'];
-        $map = $this->config;
         if ($key === '') {
             return $root;
         }
-        return $root . '/' . $map[$key];
+        return $root . '/' . $this->config[$key];
     }
 
     public function randomName(string $prefix, string $ext): string

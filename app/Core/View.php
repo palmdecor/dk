@@ -22,7 +22,7 @@ final class View
         $path = $this->basePath . '/' . $view . '.php';
         if (!file_exists($path)) {
             http_response_code(500);
-            echo 'View not found: ' . htmlspecialchars($view);
+            echo 'Görünüm bulunamadı';
             exit;
         }
         $data = array_merge($this->globals, $data);

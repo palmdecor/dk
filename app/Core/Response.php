@@ -24,7 +24,7 @@ final class Response
     {
         if (!file_exists($path)) {
             http_response_code(404);
-            echo 'File not found';
+            echo 'Dosya bulunamadı';
             exit;
         }
         header('Content-Type: ' . $mime);
