@@ -11,6 +11,7 @@ return [
     'app' => [
         'base_url' => rtrim(getenv('BASE_URL') ?: '', '/'),
         'upload_max_size' => 10 * 1024 * 1024,
+        'debug' => getenv('APP_DEBUG') === 'true',
     ],
     'storage' => [
         'root' => dirname(__DIR__) . '/storage',

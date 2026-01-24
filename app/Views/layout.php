@@ -1,5 +1,8 @@
 <?php
 use App\Core\Helpers;
+
+$error = $session->flash('error');
+$success = $session->flash('success');
 ?>
 <!doctype html>
 <html>
@@ -26,6 +29,12 @@ use App\Core\Helpers;
       <a href="/login">Login</a>
     <?php endif; ?>
   </nav>
+  <?php if ($error): ?>
+    <div class="notice notice-error"><?php echo Helpers::e($error); ?></div>
+  <?php endif; ?>
+  <?php if ($success): ?>
+    <div class="notice notice-success"><?php echo Helpers::e($success); ?></div>
+  <?php endif; ?>
   <?php echo $content; ?>
 </body>
 </html>

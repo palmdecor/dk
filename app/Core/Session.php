@@ -28,6 +28,19 @@ final class Session
         unset($_SESSION[$key]);
     }
 
+    public function flash(string $key, ?string $value = null): ?string
+    {
+        if ($value !== null) {
+            $_SESSION['flash'][$key] = $value;
+            return null;
+        }
+        $message = $_SESSION['flash'][$key] ?? null;
+        if ($message !== null) {
+            unset($_SESSION['flash'][$key]);
+        }
+        return $message;
+    }
+
     public function destroy(): void
     {
         session_destroy();

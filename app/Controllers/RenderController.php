@@ -8,6 +8,7 @@ use App\Core\Auth;
 use App\Core\Csrf;
 use App\Core\DB;
 use App\Core\Response;
+use App\Core\Session;
 use App\Core\View;
 use App\Services\Renderer;
 use App\Services\Storage;
@@ -23,6 +24,7 @@ final class RenderController
         private View $view,
         private Storage $storage,
         private Renderer $renderer,
+        private Session $session,
         private array $config
     ) {
     }
@@ -115,47 +117,44 @@ final class RenderController
         $headline = trim($_POST['headline'] ?? '');
         $subhead = trim($_POST['subhead'] ?? '');
         if ($templateId <= 0 || empty($_FILES['photo']['tmp_name'])) {
-            http_response_code(400);
-            echo 'Missing data';
-            exit;
+            $this->session->flash('error', 'Template and photo are required.');
+            $this->response->redirect('/render');
         }
         if ($_FILES['photo']['size'] > $this->config['app']['upload_max_size']) {
-            http_response_code(400);
-            echo 'File too large';
-            exit;
+            $this->session->flash('error', 'Photo file is too large.');
+            $this->response->redirect('/render');
         }
         $file = $_FILES['photo'];
         $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
         if (!in_array($ext, ['jpg', 'jpeg', 'png', 'webp'], true)) {
-            http_response_code(400);
-            echo 'Invalid photo type';
-            exit;
+            $this->session->flash('error', 'Photo must be JPG, PNG, or WEBP.');
+            $this->response->redirect('/render');
         }
         $finfo = new \finfo(FILEINFO_MIME_TYPE);
         $mime = $finfo->file($file['tmp_name']);
         if (!in_array($mime, ['image/jpeg', 'image/png', 'image/webp'], true)) {
-            http_response_code(400);
-            echo 'Invalid photo mime';
-            exit;
+            $this->session->flash('error', 'Invalid photo mime type.');
+            $this->response->redirect('/render');
         }
 
         $stmt = $this->db->pdo()->prepare('SELECT * FROM templates WHERE id = ?');
         $stmt->execute([$templateId]);
         $template = $stmt->fetch(PDO::FETCH_ASSOC);
         if (!$template) {
-            http_response_code(404);
-            echo 'Template not found';
-            exit;
+            $this->session->flash('error', 'Template not found.');
+            $this->response->redirect('/render');
         }
         if (empty($template['overlay_png_path'])) {
-            http_response_code(400);
-            echo 'Template missing overlay';
-            exit;
+            $this->session->flash('error', 'Template is missing overlay PNG.');
+            $this->response->redirect('/render');
         }
 
         $filename = $this->storage->randomName('input', $ext);
         $dest = $this->storage->path('uploads') . '/' . $filename;
-        move_uploaded_file($file['tmp_name'], $dest);
+        if (!move_uploaded_file($file['tmp_name'], $dest)) {
+            $this->session->flash('error', 'Failed to save uploaded photo.');
+            $this->response->redirect('/render');
+        }
 
         $fieldsStmt = $this->db->pdo()->prepare('SELECT f.*, fonts.file_path FROM template_text_fields f LEFT JOIN fonts ON fonts.id = f.font_id WHERE f.template_id = ? ORDER BY draw_order');
         $fieldsStmt->execute([$templateId]);
@@ -179,9 +178,11 @@ final class RenderController
             $this->renderer->render($template, $fields, $dest, $outputPath, $previewPath, $headline, $subhead, $overlayPath);
             $update = $this->db->pdo()->prepare('UPDATE renders SET output_path = ?, preview_path = ?, status = ? WHERE id = ?');
             $update->execute([$outputName, $previewName, 'done', $renderId]);
+            $this->session->flash('success', 'Render completed.');
         } catch (\Throwable $e) {
             $update = $this->db->pdo()->prepare('UPDATE renders SET status = ? WHERE id = ?');
             $update->execute(['failed', $renderId]);
+            $this->session->flash('error', 'Render failed: ' . $e->getMessage());
         }
 
         $this->response->redirect('/render');
@@ -212,6 +213,9 @@ final class RenderController
             exit;
         }
         header('Content-Type: image/jpeg');
+        if (str_ends_with($file, '.png')) {
+            header('Content-Type: image/png');
+        }
         readfile($path);
         exit;
     }

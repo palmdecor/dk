@@ -15,6 +15,9 @@ final class GdDriver
 
     public function render(array $template, array $fields, string $inputPath, string $outputPath, string $previewPath, string $headline, string $subhead, ?string $overlayPath): void
     {
+        if (!function_exists('imagettftext')) {
+            throw new RuntimeException('GD FreeType support is not available.');
+        }
         $image = imagecreatetruecolor((int)$template['width'], (int)$template['height']);
         [$r, $g, $b] = $this->hexToRgb($template['background_color'] ?: '#000000');
         $bgColor = imagecolorallocate($image, $r, $g, $b);
@@ -39,7 +42,7 @@ final class GdDriver
                 continue;
             }
             if (empty($field['font_path']) || !file_exists($field['font_path'])) {
-                continue;
+                throw new RuntimeException('Font file missing for ' . $field['field_key']);
             }
             $measure = function (string $string, int $fontSize) use ($field): float {
                 $bbox = imagettfbbox($fontSize, 0, $field['font_path'], $string);

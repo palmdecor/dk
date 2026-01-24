@@ -37,6 +37,22 @@ if (file_exists($autoload)) {
 
 $config = require $root . '/config/config.php';
 
+define('APP_DEBUG', (bool)($config['app']['debug'] ?? false));
+
+set_error_handler(function (int $severity, string $message, string $file, int $line): void {
+    throw new ErrorException($message, 0, $severity, $file, $line);
+});
+
+set_exception_handler(function (Throwable $exception): void {
+    http_response_code(500);
+    if (APP_DEBUG) {
+        echo '<h1>Application Error</h1>';
+        echo '<pre>' . htmlspecialchars((string)$exception, ENT_QUOTES, 'UTF-8') . '</pre>';
+        return;
+    }
+    echo '<h1>Something went wrong</h1><p>Please try again later.</p>';
+});
+
 $session = new Session();
 $session->start();
 
@@ -45,7 +61,7 @@ $auth = new Auth($session);
 $csrf = new Csrf($session);
 $response = new Response();
 $view = new View($root . '/app/Views');
-$view->share(['auth' => $auth, 'csrf' => $csrf]);
+$view->share(['auth' => $auth, 'csrf' => $csrf, 'session' => $session]);
 
 $storage = new Storage($config['storage']);
 $storage->ensure();
@@ -54,9 +70,9 @@ $textLayout = new TextLayout();
 $renderer = new Renderer($textLayout);
 
 $authController = new AuthController($db, $auth, $csrf, $response, $view);
-$fontsController = new AdminFontsController($db, $auth, $csrf, $response, $view, $storage, $config);
-$templatesController = new AdminTemplatesController($db, $auth, $csrf, $response, $view, $storage, $renderer, $config);
-$renderController = new RenderController($db, $auth, $csrf, $response, $view, $storage, $renderer, $config);
+$fontsController = new AdminFontsController($db, $auth, $csrf, $response, $view, $storage, $session, $config);
+$templatesController = new AdminTemplatesController($db, $auth, $csrf, $response, $view, $storage, $renderer, $session, $config);
+$renderController = new RenderController($db, $auth, $csrf, $response, $view, $storage, $renderer, $session, $config);
 
 $router = new Router();
 
@@ -68,6 +84,7 @@ $router->post('/logout', fn () => $authController->logout());
 $router->get('/admin/fonts', fn () => $fontsController->index());
 $router->post('/admin/fonts/upload', fn () => $fontsController->upload());
 $router->post('/admin/fonts/{id}/toggle', fn ($params) => $fontsController->toggle($params));
+$router->get('/admin/fonts/test/{id}', fn ($params) => $fontsController->test($params));
 
 $router->get('/admin/templates', fn () => $templatesController->index());
 $router->get('/admin/templates/create', fn () => $templatesController->createForm());

@@ -8,6 +8,7 @@ use App\Core\Auth;
 use App\Core\Csrf;
 use App\Core\DB;
 use App\Core\Response;
+use App\Core\Session;
 use App\Core\View;
 use App\Services\Renderer;
 use App\Services\Storage;
@@ -23,6 +24,7 @@ final class AdminTemplatesController
         private View $view,
         private Storage $storage,
         private Renderer $renderer,
+        private Session $session,
         private array $config
     ) {
     }
@@ -69,12 +71,12 @@ final class AdminTemplatesController
         $background = $_POST['background_color'] ?? '#000000';
         $format = $_POST['export_format'] ?? 'jpg';
         if ($name === '' || $width <= 0 || $height <= 0) {
-            http_response_code(400);
-            echo 'Invalid template';
-            exit;
+            $this->session->flash('error', 'Template name and size are required.');
+            $this->response->redirect('/admin/templates/create');
         }
         $stmt = $this->db->pdo()->prepare('INSERT INTO templates (name, width, height, media_fit_mode, background_color, export_format, created_at) VALUES (?, ?, ?, ?, ?, ?, NOW())');
         $stmt->execute([$name, $width, $height, $fit, $background, $format]);
+        $this->session->flash('success', 'Template created.');
         $this->response->redirect('/admin/templates');
     }
 
@@ -90,6 +92,9 @@ final class AdminTemplatesController
             echo 'Template not found';
             exit;
         }
+
+        $this->ensureDefaultFields($id);
+
         $fieldStmt = $this->db->pdo()->prepare('SELECT * FROM template_text_fields WHERE template_id = ?');
         $fieldStmt->execute([$id]);
         $fields = $fieldStmt->fetchAll(PDO::FETCH_ASSOC);
@@ -112,34 +117,34 @@ final class AdminTemplatesController
         $this->requireAdmin();
         $this->csrf->verify();
         if (empty($_FILES['overlay']['tmp_name'])) {
-            http_response_code(400);
-            echo 'Missing overlay';
-            exit;
+            $this->session->flash('error', 'Overlay file is required.');
+            $this->response->redirect('/admin/templates/' . (int)$params['id'] . '/edit');
         }
         if ($_FILES['overlay']['size'] > $this->config['app']['upload_max_size']) {
-            http_response_code(400);
-            echo 'File too large';
-            exit;
+            $this->session->flash('error', 'Overlay file is too large.');
+            $this->response->redirect('/admin/templates/' . (int)$params['id'] . '/edit');
         }
         $file = $_FILES['overlay'];
         $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
         if ($ext !== 'png') {
-            http_response_code(400);
-            echo 'Overlay must be PNG';
-            exit;
+            $this->session->flash('error', 'Overlay must be a PNG file.');
+            $this->response->redirect('/admin/templates/' . (int)$params['id'] . '/edit');
         }
         $finfo = new \finfo(FILEINFO_MIME_TYPE);
         $mime = $finfo->file($file['tmp_name']);
         if ($mime !== 'image/png') {
-            http_response_code(400);
-            echo 'Invalid overlay mime';
-            exit;
+            $this->session->flash('error', 'Invalid overlay mime type.');
+            $this->response->redirect('/admin/templates/' . (int)$params['id'] . '/edit');
         }
         $filename = $this->storage->randomName('overlay', 'png');
         $dest = $this->storage->path('overlays') . '/' . $filename;
-        move_uploaded_file($file['tmp_name'], $dest);
+        if (!move_uploaded_file($file['tmp_name'], $dest)) {
+            $this->session->flash('error', 'Failed to save overlay.');
+            $this->response->redirect('/admin/templates/' . (int)$params['id'] . '/edit');
+        }
         $stmt = $this->db->pdo()->prepare('UPDATE templates SET overlay_png_path = ? WHERE id = ?');
         $stmt->execute([$filename, (int)$params['id']]);
+        $this->session->flash('success', 'Overlay uploaded.');
         $this->response->redirect('/admin/templates/' . (int)$params['id'] . '/edit');
     }
 
@@ -270,9 +275,104 @@ final class AdminTemplatesController
         $preview = $this->storage->path('previews') . '/' . $this->storage->randomName('preview', 'jpg');
         $overlay = $template['overlay_png_path'] ? $this->storage->path('overlays') . '/' . $template['overlay_png_path'] : null;
 
-        $this->renderer->render($template, $fields, $samplePath, $output, $preview, 'Headline Example', 'Subhead example goes here', $overlay);
+        try {
+            $this->renderer->render($template, $fields, $samplePath, $output, $preview, 'Headline Example', 'Subhead example goes here', $overlay);
+            $previewId = basename($preview);
+            $this->response->json(['preview_url' => '/preview/' . $previewId]);
+        } catch (\Throwable $e) {
+            $this->response->json(['error' => 'Render failed: ' . $e->getMessage()], 500);
+        }
+    }
 
-        $previewId = basename($preview);
-        $this->response->json(['preview_url' => '/preview/' . $previewId]);
+    private function ensureDefaultFields(int $templateId): void
+    {
+        $stmt = $this->db->pdo()->prepare('SELECT field_key FROM template_text_fields WHERE template_id = ?');
+        $stmt->execute([$templateId]);
+        $existing = $stmt->fetchAll(PDO::FETCH_COLUMN);
+        $defaults = [
+            'headline' => [
+                'x' => 50,
+                'y' => 50,
+                'w' => 500,
+                'h' => 200,
+                'padding' => 0,
+                'font_id' => null,
+                'base_font_size' => 48,
+                'min_font_size' => 20,
+                'max_lines' => 3,
+                'line_height' => 1.2,
+                'color' => '#ffffff',
+                'align' => 'left',
+                'valign' => 'top',
+                'stroke_enabled' => 0,
+                'stroke_width' => 2,
+                'stroke_color' => '#000000',
+                'shadow_enabled' => 0,
+                'shadow_x' => 2,
+                'shadow_y' => 2,
+                'shadow_blur' => 4,
+                'shadow_color' => '#000000',
+                'draw_order' => 1,
+            ],
+            'subhead' => [
+                'x' => 50,
+                'y' => 300,
+                'w' => 500,
+                'h' => 160,
+                'padding' => 0,
+                'font_id' => null,
+                'base_font_size' => 32,
+                'min_font_size' => 16,
+                'max_lines' => 3,
+                'line_height' => 1.2,
+                'color' => '#ffffff',
+                'align' => 'left',
+                'valign' => 'top',
+                'stroke_enabled' => 0,
+                'stroke_width' => 2,
+                'stroke_color' => '#000000',
+                'shadow_enabled' => 0,
+                'shadow_x' => 2,
+                'shadow_y' => 2,
+                'shadow_blur' => 4,
+                'shadow_color' => '#000000',
+                'draw_order' => 2,
+            ],
+        ];
+
+        foreach ($defaults as $key => $data) {
+            if (in_array($key, $existing, true)) {
+                continue;
+            }
+            $insert = $this->db->pdo()->prepare(
+                'INSERT INTO template_text_fields (template_id, field_key, x, y, w, h, padding, font_id, base_font_size, min_font_size, max_lines, line_height, color, align, valign, stroke_enabled, stroke_width, stroke_color, shadow_enabled, shadow_x, shadow_y, shadow_blur, shadow_color, draw_order) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)'
+            );
+            $insert->execute([
+                $templateId,
+                $key,
+                $data['x'],
+                $data['y'],
+                $data['w'],
+                $data['h'],
+                $data['padding'],
+                $data['font_id'],
+                $data['base_font_size'],
+                $data['min_font_size'],
+                $data['max_lines'],
+                $data['line_height'],
+                $data['color'],
+                $data['align'],
+                $data['valign'],
+                $data['stroke_enabled'],
+                $data['stroke_width'],
+                $data['stroke_color'],
+                $data['shadow_enabled'],
+                $data['shadow_x'],
+                $data['shadow_y'],
+                $data['shadow_blur'],
+                $data['shadow_color'],
+                $data['draw_order'],
+            ]);
+        }
     }
 }

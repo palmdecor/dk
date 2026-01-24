@@ -8,6 +8,7 @@ use App\Services\TextLayout;
 use Imagick;
 use ImagickDraw;
 use ImagickPixel;
+use RuntimeException;
 
 final class ImagickDriver
 {
@@ -43,12 +44,13 @@ final class ImagickDriver
                 continue;
             }
             if (empty($field['font_path']) || !file_exists($field['font_path'])) {
-                continue;
+                throw new RuntimeException('Font file missing for ' . $field['field_key']);
             }
             $measure = function (string $string, int $fontSize) use ($canvas, $field): float {
                 $draw = new ImagickDraw();
                 $draw->setFont($field['font_path']);
                 $draw->setFontSize($fontSize);
+                $draw->setTextEncoding('UTF-8');
                 $metrics = $canvas->queryFontMetrics($draw, $string);
                 return (float)$metrics['textWidth'];
             };

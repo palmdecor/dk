@@ -19,16 +19,24 @@ ob_start();
       <button type="submit">Upload</button>
     </form>
 
-    <h3>Canvas Editor</h3>
-    <canvas
-      id="templateCanvas"
-      width="<?php echo (int)$template['width']; ?>"
-      height="<?php echo (int)$template['height']; ?>"
+    <h3>Drag & Drop Editor</h3>
+    <div
+      id="editorStage"
       data-template='<?php echo json_encode($template, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP); ?>'
       data-fields='<?php echo json_encode($fields, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP); ?>'
       data-overlay="<?php echo Helpers::e($overlayUrl); ?>"
-    ></canvas>
-    <p class="small">Drag to move. Drag bottom-right corner to resize. Fields: headline (blue), subhead (green).</p>
+      class="editor-stage"
+    >
+      <div class="editor-box editor-headline" data-key="headline">
+        <span class="editor-label">HEADLINE</span>
+        <div class="editor-handle"></div>
+      </div>
+      <div class="editor-box editor-subhead" data-key="subhead">
+        <span class="editor-label">SUBHEAD</span>
+        <div class="editor-handle"></div>
+      </div>
+    </div>
+    <p class="small">Drag the boxes to move. Drag the handle to resize. Changes sync with the fields panel.</p>
     <button id="saveFields">Save Fields</button>
     <button id="testRender">Test Render</button>
     <div id="testPreview" class="preview"></div>

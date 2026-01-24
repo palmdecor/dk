@@ -12,8 +12,14 @@ ob_start();
       <option value="<?php echo (int)$template['id']; ?>"><?php echo Helpers::e($template['name']); ?></option>
     <?php endforeach; ?>
   </select>
+
   <label>Photo</label>
-  <input type="file" name="photo" required>
+  <div id="photoDropzone" class="dropzone">
+    <input id="photoInput" type="file" name="photo" accept="image/*" required>
+    <p>Drag & drop a photo here, or click to browse.</p>
+    <span class="small" id="photoFilename">No file selected</span>
+  </div>
+
   <label>Headline</label>
   <textarea name="headline" rows="2"></textarea>
   <label>Subhead</label>
@@ -53,6 +59,7 @@ ob_start();
     <?php endforeach; ?>
   </tbody>
 </table>
+<script src="/assets/render.js"></script>
 <?php
 $content = ob_get_clean();
 $title = 'Render';
